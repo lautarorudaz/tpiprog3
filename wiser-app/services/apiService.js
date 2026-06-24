@@ -6,6 +6,10 @@ export const registrarUsuarioEnBD = async (firebaseUid, email, nombre, apellido,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ firebaseUid, email, nombre, apellido, rol })
   });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error ${response.status}: ${errorText}`);
+  }
   return response.json();
 };
 

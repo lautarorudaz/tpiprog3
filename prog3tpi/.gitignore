@@ -1,0 +1,42 @@
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userhtml
+*.userprefs
+*.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPS/
+[Rr]elease/
+[Rr]eleasePS/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options directory
+.vs/
+
+# Rider/Resharper
+.idea/
+
+# Tooling
+.NETCore/
+*.userprefs
+*.usertasks
+
+# Publish output
+publish/
+**/App_Data/jobs/
+**/App_Data/Logs/
+
+# local settings
+appsettings.Development.json
+appsettings.Local.json

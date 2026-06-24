@@ -27,6 +27,8 @@ export default function RootLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="register" />
       <Stack.Screen name="select-role" />
+      <Stack.Screen name="alumno" />
+      <Stack.Screen name="profesor" />
     </Stack>
   );
 }
