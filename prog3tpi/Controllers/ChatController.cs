@@ -30,6 +30,7 @@ namespace TP02.Controllers
             var conversacionList = await _db.Conversaciones
                 .Include(c => c.Alumno).ThenInclude(a => a.Usuario)
                 .Include(c => c.Mensajes)
+                .Include(c => c.Turno)
                 .Where(c => c.ProfesorId == profesorId)
                 .ToListAsync();
 
@@ -44,7 +45,42 @@ namespace TP02.Controllers
                     AlumnoNombre = $"{c.Alumno.Usuario.Nombre} {c.Alumno.Usuario.Apellido}".Trim(),
                     UltimoMensaje = ultimoMensaje?.Contenido ?? "Sin mensajes",
                     FechaUltimoMensaje = ultimoMensaje?.EnviadoEn ?? c.CreadaEn,
-                    NoLeidos = noLeidosCount
+                    NoLeidos = noLeidosCount,
+                    EsSolicitud = c.Turno != null && c.Turno.Estado == EstadoTurno.pendiente_pago
+                };
+            }).ToList();
+
+            return Ok(resultado);
+        }
+
+        // GET api/chat/alumno/{alumnoId}
+        [HttpGet("alumno/{alumnoId}")]
+        public async Task<IActionResult> ObtenerChatsAlumno(int alumnoId)
+        {
+            var alumno = await _db.Alumnos.Include(a => a.Usuario).FirstOrDefaultAsync(a => a.Id == alumnoId);
+            if (alumno == null) return NotFound("Alumno no encontrado");
+
+            var conversacionList = await _db.Conversaciones
+                .Include(c => c.Profesor).ThenInclude(p => p.Usuario)
+                .Include(c => c.Mensajes)
+                .Include(c => c.Turno)
+                .Where(c => c.AlumnoId == alumnoId)
+                .ToListAsync();
+
+            var resultado = conversacionList.Select(c => {
+                var ultimoMensaje = c.Mensajes.OrderByDescending(m => m.EnviadoEn).FirstOrDefault();
+                var noLeidosCount = c.Mensajes.Count(m => !m.Leido && m.RemitenteId != alumno.UsuarioId);
+
+                return new
+                {
+                    ConversacionId     = c.Id,
+                    ProfesorId         = c.ProfesorId,
+                    ProfesorNombre     = $"{c.Profesor.Usuario.Nombre} {c.Profesor.Usuario.Apellido}".Trim(),
+                    ProfesorFoto       = c.Profesor.Usuario.FotoPerfil,
+                    UltimoMensaje      = ultimoMensaje?.Contenido ?? "Sin mensajes",
+                    FechaUltimoMensaje = ultimoMensaje?.EnviadoEn ?? c.CreadaEn,
+                    NoLeidos           = noLeidosCount,
+                    EsSolicitud        = c.Turno != null && c.Turno.Estado == EstadoTurno.pendiente_pago
                 };
             }).ToList();
 

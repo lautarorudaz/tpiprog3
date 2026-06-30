@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Escuchar en todas las interfaces (necesario para acceder desde el celular en la misma red WiFi) ──
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
 // ── API (no MVC con vistas) ──────────────────────────────────
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

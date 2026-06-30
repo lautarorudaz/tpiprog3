@@ -67,7 +67,24 @@ namespace TP02.Controllers
 
             return Ok(usuario);
         }
+
+        // PUT api/usuario/{id}
+        // Editar datos básicos de la cuenta (nombre, apellido, foto de perfil)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditarCuenta(int id, [FromBody] EditarCuentaDto dto)
+        {
+            var usuario = await _db.Usuarios.FindAsync(id);
+            if (usuario == null) return NotFound();
+
+            usuario.Nombre = dto.Nombre;
+            usuario.Apellido = dto.Apellido;
+            if (dto.FotoPerfil != null) usuario.FotoPerfil = dto.FotoPerfil;
+
+            await _db.SaveChangesAsync();
+            return Ok(usuario);
+        }
     }
 
     public record RegistroDto(string FirebaseUid, string Email, string? Nombre, string? Apellido, RolUsuario Rol);
+    public record EditarCuentaDto(string Nombre, string Apellido, string? FotoPerfil);
 }

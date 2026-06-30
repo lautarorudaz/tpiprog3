@@ -6,6 +6,7 @@ namespace TP02.Models
     {
         public int Id { get; set; }
         public int UsuarioId { get; set; }
+        public string? Titulo { get; set; }
         public string? Descripcion { get; set; }
         public ModalidadTipo Modalidad { get; set; }
         public decimal PrecioHora { get; set; }

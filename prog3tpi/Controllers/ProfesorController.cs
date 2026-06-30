@@ -51,6 +51,7 @@ namespace TP02.Controllers
                 p.Usuario.Nombre,
                 p.Usuario.Apellido,
                 p.Usuario.FotoPerfil,
+                p.Titulo,
                 p.Descripcion,
                 p.Modalidad,
                 p.PrecioHora,
@@ -85,6 +86,7 @@ namespace TP02.Controllers
                 profesor.Usuario.Nombre,
                 profesor.Usuario.Apellido,
                 profesor.Usuario.FotoPerfil,
+                profesor.Titulo,
                 profesor.Descripcion,
                 profesor.Modalidad,
                 profesor.PrecioHora,
@@ -96,6 +98,15 @@ namespace TP02.Controllers
                 Disponibilidades = profesor.Disponibilidades.Select(d => new { d.DiaSemana, d.Turno }),
                 TieneDatosBancarios = profesor.DatosBancarios.Any()
             });
+        }
+
+        // GET api/profesor/{id}/datosbancarios
+        [HttpGet("{id}/datosbancarios")]
+        public async Task<IActionResult> ObtenerDatosBancarios(int id)
+        {
+            var datos = await _db.DatosBancarios.FirstOrDefaultAsync(d => d.ProfesorId == id);
+            if (datos == null) return NotFound("El profesor aún no cargó sus datos bancarios.");
+            return Ok(new { datos.CBU, datos.Alias, datos.Banco, datos.Titular });
         }
 
         // PUT api/profesor/{id}
@@ -117,6 +128,7 @@ namespace TP02.Controllers
             if (dto.FotoPerfil != null) profesor.Usuario.FotoPerfil = dto.FotoPerfil;
 
             // Datos del profesor
+            profesor.Titulo      = dto.Titulo;
             profesor.Descripcion = dto.Descripcion;
             profesor.Modalidad   = dto.Modalidad;
             profesor.PrecioHora  = dto.PrecioHora;
@@ -153,6 +165,7 @@ namespace TP02.Controllers
         string Nombre,
         string Apellido,
         string? FotoPerfil,
+        string? Titulo,
         string? Descripcion,
         ModalidadTipo Modalidad,
         decimal PrecioHora,
