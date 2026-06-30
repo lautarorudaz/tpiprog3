@@ -131,9 +131,12 @@ namespace TP02.Controllers
                     t.TurnoHorario,
                     t.Modalidad,
                     t.Estado,
-                    Materia = t.Materia.Nombre,
-                    Alumno  = $"{t.Alumno.Usuario.Nombre} {t.Alumno.Usuario.Apellido}",
-                    Pago    = t.Pago == null ? null : new { t.Pago.Metodo, t.Pago.Estado, t.Pago.ComprobanteUrl }
+                    t.MotivoCancelacion,
+                    Materia    = t.Materia.Nombre,
+                    Alumno     = $"{t.Alumno.Usuario.Nombre} {t.Alumno.Usuario.Apellido}",
+                    AlumnoId   = t.AlumnoId,
+                    AlumnoFoto = t.Alumno.Usuario.FotoPerfil,
+                    Pago       = t.Pago == null ? null : new { t.Pago.Metodo, t.Pago.Estado, t.Pago.ComprobanteUrl }
                 })
                 .ToListAsync();
 
@@ -149,6 +152,21 @@ namespace TP02.Controllers
             if (turno == null) return NotFound();
 
             turno.Estado = dto.Estado;
+            await _db.SaveChangesAsync();
+
+            return Ok(new { turno.Id, turno.Estado });
+        }
+
+        // PUT api/turno/{id}/cancelar
+        // Cancelar un turno confirmado (profesor)
+        [HttpPut("{id}/cancelar")]
+        public async Task<IActionResult> Cancelar(int id, [FromBody] CancelarTurnoDto dto)
+        {
+            var turno = await _db.Turnos.FindAsync(id);
+            if (turno == null) return NotFound();
+
+            turno.Estado              = EstadoTurno.cancelado;
+            turno.MotivoCancelacion   = dto.Motivo;
             await _db.SaveChangesAsync();
 
             return Ok(new { turno.Id, turno.Estado });
@@ -182,5 +200,6 @@ namespace TP02.Controllers
     );
 
     public record CambiarEstadoDto(EstadoTurno Estado);
+    public record CancelarTurnoDto(string? Motivo);
     public record ComprobanteDto(string ComprobanteUrl);
 }

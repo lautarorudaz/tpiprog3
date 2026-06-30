@@ -28,6 +28,7 @@ namespace TP02.Models
         public TurnoTipo TurnoHorario { get; set; }
         public ModalidadTipo Modalidad { get; set; }
         public EstadoTurno Estado { get; set; } = EstadoTurno.pendiente_pago;
+        public string? MotivoCancelacion { get; set; }
         public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
 
         public Profesor Profesor { get; set; } = null!;
