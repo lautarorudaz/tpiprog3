@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator, Image
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/colors';
@@ -11,6 +12,7 @@ import { obtenerTurnosProfesor, actualizarEstadoTurno } from '../../../services/
 import { useProfesor } from '../../../hooks/use-profesor';
 
 export default function ProfesorDashboard() {
+  const router = useRouter();
   const { usuario, profesorId, nombre, fotoPerfil, loading: loadingUsuario } = useProfesor();
 
   const [loadingTurnos, setLoadingTurnos] = useState(true);
@@ -163,7 +165,7 @@ export default function ProfesorDashboard() {
                   <Text style={styles.solicitudAlumno}>{sol.alumno}</Text>
                   <TouchableOpacity
                     style={styles.btnVerPerfil}
-                    onPress={() => Alert.alert('Perfil de Alumno', `Detalles de ${sol.alumno}`)}
+                    onPress={() => router.push({ pathname: '/profesor/perfil-alumno', params: { alumnoId: String(sol.alumnoId ?? '') } })}
                   >
                     <Text style={styles.btnVerPerfilText}>VER PERFIL</Text>
                   </TouchableOpacity>

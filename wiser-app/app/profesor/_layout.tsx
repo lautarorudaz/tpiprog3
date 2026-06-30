@@ -9,6 +9,8 @@ export default function ProfesorLayout() {
       <Stack.Screen name="mi-perfil" />
       <Stack.Screen name="ajustes-cuenta" />
       <Stack.Screen name="preguntas-frecuentes" />
+      <Stack.Screen name="perfil-alumno" />
+      <Stack.Screen name="detalle-turno" />
     </Stack>
   );
 }

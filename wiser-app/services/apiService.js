@@ -202,6 +202,16 @@ export const subirComprobante = async (turnoId, comprobanteUrl) => {
   return response.json();
 };
 
+export const cancelarTurno = async (turnoId, motivo) => {
+  const response = await fetch(`${BASE_URL}/turno/${turnoId}/cancelar`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ motivo: motivo || null })
+  });
+  if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
+  return response.json();
+};
+
 export const crearValoracion = async (data) => {
   const response = await fetch(`${BASE_URL}/valoracion`, {
     method: "POST",

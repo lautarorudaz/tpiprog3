@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Alert, ActivityIndicator, Modal
 } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/colors';
@@ -23,6 +24,7 @@ function formatFecha(fechaISO: string) {
 }
 
 export default function ProfesorAgenda() {
+  const router = useRouter();
   const { profesorId, loading: loadingUsuario } = useProfesor();
 
   const [loadingTurnos, setLoadingTurnos] = useState(true);
@@ -47,6 +49,15 @@ export default function ProfesorAgenda() {
   useEffect(() => {
     if (profesorId) loadTurnos(profesorId);
   }, [profesorId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (profesorId) {
+        setLoadingTurnos(true);
+        loadTurnos(profesorId);
+      }
+    }, [profesorId])
+  );
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -166,13 +177,30 @@ export default function ProfesorAgenda() {
           <Text style={styles.vacioText}>No tenés clases confirmadas próximamente.</Text>
         ) : (
           proximasClases.map(c => (
-            <View key={c.id} style={styles.claseCard}>
+            <TouchableOpacity
+              key={c.id}
+              style={styles.claseCard}
+              onPress={() => router.push({
+                pathname: '/profesor/detalle-turno',
+                params: {
+                  turnoId: String(c.id),
+                  materia: c.materia,
+                  fecha: String(c.fecha),
+                  turnoHorario: c.turnoHorario,
+                  modalidad: c.modalidad,
+                  alumnoNombre: c.alumno,
+                  alumnoId: String(c.alumnoId ?? ''),
+                  alumnoFoto: c.alumnoFoto ?? '',
+                },
+              })}
+            >
               <View style={styles.claseCardLeft}>
                 <Text style={styles.claseMateria}>{c.materia}</Text>
                 <Text style={styles.claseDetalle}>{formatFecha(c.fecha)} · {labelTurno(c.turnoHorario)}</Text>
                 <Text style={styles.claseAlumno}>{c.alumno}</Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={16} color="#aaa" />
+            </TouchableOpacity>
           ))
         )}
 
@@ -223,7 +251,28 @@ export default function ProfesorAgenda() {
             ) : (
               <ScrollView style={{ maxHeight: verticalScale(300) }}>
                 {turnosDelDiaSeleccionado.map(t => (
-                  <View key={t.id} style={styles.modalClaseCard}>
+                  <TouchableOpacity
+                    key={t.id}
+                    style={styles.modalClaseCard}
+                    activeOpacity={t.estado === 'confirmado' ? 0.7 : 1}
+                    onPress={() => {
+                      if (t.estado !== 'confirmado') return;
+                      setModalVisible(false);
+                      router.push({
+                        pathname: '/profesor/detalle-turno',
+                        params: {
+                          turnoId: String(t.id),
+                          materia: t.materia,
+                          fecha: String(t.fecha),
+                          turnoHorario: t.turnoHorario,
+                          modalidad: t.modalidad,
+                          alumnoNombre: t.alumno,
+                          alumnoId: String(t.alumnoId ?? ''),
+                          alumnoFoto: t.alumnoFoto ?? '',
+                        },
+                      });
+                    }}
+                  >
                     <View style={{ flex: 1 }}>
                       <Text style={styles.claseMateria}>{t.materia}</Text>
                       <Text style={styles.claseDetalle}>{labelTurno(t.turnoHorario)}</Text>
@@ -239,9 +288,12 @@ export default function ProfesorAgenda() {
                         </TouchableOpacity>
                       </View>
                     ) : (
-                      <Text style={[styles.estadoBadge, styles.estadoConfirmado]}>Confirmada</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Text style={[styles.estadoBadge, styles.estadoConfirmado]}>Confirmada</Text>
+                        <Ionicons name="chevron-forward" size={14} color="#aaa" />
+                      </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             )}
