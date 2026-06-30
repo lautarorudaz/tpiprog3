@@ -10,23 +10,7 @@ import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { obtenerMaterias, actualizarPerfilProfesor, obtenerUsuarioPorFirebase } from '../../services/apiService';
 import { auth } from '../../services/firebase';
-
-const DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-const DAY_LABELS: { [key: string]: string } = {
-  lunes: 'LUN',
-  martes: 'MAR',
-  miercoles: 'MIE',
-  jueves: 'JUE',
-  viernes: 'VIE',
-  sabado: 'SAB',
-  domingo: 'DOM'
-};
-
-const TURNS = [
-  { id: 'manana', label: '9hs A 12hs', hours: ['09:00', '10:00', '11:00', '12:00'] },
-  { id: 'tarde', label: '13hs A 17hs', hours: ['13:00', '14:00', '15:00', '16:00', '17:00'] },
-  { id: 'noche', label: '18hs A 22hs', hours: ['18:00', '19:00', '20:00', '21:00', '22:00'] }
-];
+import DisponibilidadGrid, { DIAS, TurnoKey, crearDisponibilidadVacia, DisponibilidadValue } from '../../components/disponibilidad-grid';
 
 export default function ProfesorSetupProfile() {
   const router = useRouter();
@@ -55,16 +39,8 @@ export default function ProfesorSetupProfile() {
   });
   const [precioHora, setPrecioHora] = useState('');
 
-  // Step 3 State
-  const [currentTurnIndex, setCurrentTurnIndex] = useState(0); // 0: manana, 1: tarde, 2: noche
-  // Detailed slots availability tracking: { [day]: { [hour]: boolean } }
-  const [selectedSlots, setSelectedSlots] = useState<{ [day: string]: { [hour: string]: boolean } }>(() => {
-    const initial: any = {};
-    DAYS.forEach(day => {
-      initial[day] = {};
-    });
-    return initial;
-  });
+  // Step 3 State: disponibilidad por día y turno (mañana/tarde/noche)
+  const [disponibilidad, setDisponibilidad] = useState<DisponibilidadValue>(crearDisponibilidadVacia());
 
   // Fetch initial profile and subjects
   useEffect(() => {
@@ -132,12 +108,12 @@ export default function ProfesorSetupProfile() {
     }
   };
 
-  const toggleSlot = (day: string, hour: string) => {
-    setSelectedSlots(prev => ({
+  const toggleTurno = (day: string, turno: TurnoKey) => {
+    setDisponibilidad(prev => ({
       ...prev,
       [day]: {
         ...prev[day],
-        [hour]: !prev[day]?.[hour]
+        [turno]: !prev[day]?.[turno]
       }
     }));
   };
@@ -164,28 +140,13 @@ export default function ProfesorSetupProfile() {
         }
       });
 
-      // 2. Map Hour slots selection to simple Turno availability (manana, tarde, noche) for each day
+      // 2. Map disponibilidad por día/turno a el payload que espera el back
       const disponibilidadesPayload: { diaSemana: string; turno: string }[] = [];
-      DAYS.forEach(day => {
-        const slotsForDay = selectedSlots[day] || {};
-        
-        // If any of the morning hours are selected, mark 'manana' as available
-        const morningHours = TURNS[0].hours;
-        if (morningHours.some(h => slotsForDay[h])) {
-          disponibilidadesPayload.push({ diaSemana: day, turno: 'manana' });
-        }
-        
-        // If any of the afternoon hours are selected, mark 'tarde' as available
-        const afternoonHours = TURNS[1].hours;
-        if (afternoonHours.some(h => slotsForDay[h])) {
-          disponibilidadesPayload.push({ diaSemana: day, turno: 'tarde' });
-        }
-        
-        // If any of the night hours are selected, mark 'noche' as available
-        const nightHours = TURNS[2].hours;
-        if (nightHours.some(h => slotsForDay[h])) {
-          disponibilidadesPayload.push({ diaSemana: day, turno: 'noche' });
-        }
+      DIAS.forEach(({ key: day }) => {
+        const turnosDelDia = disponibilidad[day] || { manana: false, tarde: false, noche: false };
+        (['manana', 'tarde', 'noche'] as TurnoKey[]).forEach(turno => {
+          if (turnosDelDia[turno]) disponibilidadesPayload.push({ diaSemana: day, turno });
+        });
       });
 
       // Split name
@@ -224,14 +185,6 @@ export default function ProfesorSetupProfile() {
     }
   };
 
-  const handlePrevTurn = () => {
-    setCurrentTurnIndex(prev => (prev === 0 ? TURNS.length - 1 : prev - 1));
-  };
-
-  const handleNextTurn = () => {
-    setCurrentTurnIndex(prev => (prev === TURNS.length - 1 ? 0 : prev + 1));
-  };
-
   if (loading && step === 1) {
     return (
       <View style={styles.loadingContainer}>
@@ -239,8 +192,6 @@ export default function ProfesorSetupProfile() {
       </View>
     );
   }
-
-  const currentTurn = TURNS[currentTurnIndex];
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.container}>
@@ -406,59 +357,9 @@ export default function ProfesorSetupProfile() {
         <View style={styles.content}>
           <Text style={styles.wiserCenter}>Wiser</Text>
           <Text style={styles.stepTitle}>RELLENA CON TUS PREFERENCIAS</Text>
+          <Text style={styles.sectionLabel}>Elegí los días y franjas horarias en las que das clases</Text>
 
-          {/* Week & Turn selection header */}
-          <View style={styles.availabilityHeaders}>
-            <View style={styles.availabilityHeaderCol}>
-              <Text style={styles.availabilityHeaderTitle}>SEMANA</Text>
-              <Text style={styles.availabilityHeaderSubtitle}>Actual</Text>
-            </View>
-
-            <View style={styles.availabilityHeaderCol}>
-              <Text style={styles.availabilityHeaderTitle}>HORARIOS</Text>
-              <View style={styles.turnSelectorRow}>
-                <TouchableOpacity onPress={handlePrevTurn}>
-                  <Ionicons name="chevron-back" size={16} color={Colors.cian} />
-                </TouchableOpacity>
-                <Text style={styles.turnSelectorLabel}>{currentTurn.label}</Text>
-                <TouchableOpacity onPress={handleNextTurn}>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.cian} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Availability Grid */}
-          <ScrollView horizontal contentContainerStyle={{ flexDirection: 'column' }} style={{ marginTop: 20 }}>
-            {/* Days header */}
-            <View style={styles.gridRow}>
-              <View style={styles.gridHeaderCellEmpty} />
-              {DAYS.map(day => (
-                <View key={day} style={styles.gridHeaderCell}>
-                  <Text style={styles.gridHeaderCellText}>{DAY_LABELS[day]}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Hour Rows */}
-            {currentTurn.hours.map(hour => (
-              <View key={hour} style={styles.gridRow}>
-                <View style={styles.gridHourCell}>
-                  <Text style={styles.gridHourCellText}>{hour}</Text>
-                </View>
-                {DAYS.map(day => {
-                  const isActive = selectedSlots[day]?.[hour] || false;
-                  return (
-                    <TouchableOpacity
-                      key={day}
-                      style={[styles.gridCell, isActive && styles.gridCellActive]}
-                      onPress={() => toggleSlot(day, hour)}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-          </ScrollView>
+          <DisponibilidadGrid value={disponibilidad} onToggle={toggleTurno} />
 
           {/* Action buttons */}
           <View style={{ width: '100%', marginTop: 30, alignItems: 'center' }}>
@@ -764,80 +665,6 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     fontWeight: 'bold',
     letterSpacing: 1,
-  },
-  availabilityHeaders: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: verticalScale(16),
-  },
-  availabilityHeaderCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  availabilityHeaderTitle: {
-    fontFamily: Fonts.spaceGroteskMedium,
-    color: Colors.cian,
-    fontSize: moderateScale(11),
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  availabilityHeaderSubtitle: {
-    fontFamily: Fonts.rubikRegular,
-    color: Colors.blanco,
-    fontSize: moderateScale(13),
-  },
-  turnSelectorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  turnSelectorLabel: {
-    fontFamily: Fonts.rubikRegular,
-    color: Colors.blanco,
-    fontSize: moderateScale(13),
-    minWidth: 80,
-    textAlign: 'center',
-  },
-  gridRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  gridHeaderCellEmpty: {
-    width: scale(55),
-  },
-  gridHeaderCell: {
-    width: scale(42),
-    alignItems: 'center',
-  },
-  gridHeaderCellText: {
-    fontFamily: Fonts.spaceGroteskBold,
-    color: Colors.blanco,
-    fontSize: moderateScale(11),
-  },
-  gridHourCell: {
-    width: scale(55),
-    paddingRight: 8,
-    alignItems: 'flex-end',
-  },
-  gridHourCellText: {
-    fontFamily: Fonts.rubikRegular,
-    color: Colors.blanco,
-    fontSize: moderateScale(12),
-  },
-  gridCell: {
-    width: scale(36),
-    height: scale(28),
-    backgroundColor: Colors.superficieB,
-    borderColor: '#11223e',
-    borderWidth: 1,
-    marginHorizontal: 3,
-    borderRadius: 4,
-  },
-  gridCellActive: {
-    backgroundColor: '#4cd964', // Bright green slot as in Screenshot 3
   },
   modalOverlay: {
     flex: 1,

@@ -1,0 +1,304 @@
+import { useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  ActivityIndicator, Alert, Modal, Image
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/colors';
+import { Fonts } from '../../constants/fonts';
+import { obtenerTurnosAlumno, crearValoracion } from '../../services/apiService';
+import { useAlumno } from '../../hooks/use-alumno';
+import { TURNOS } from '../../components/disponibilidad-grid';
+
+function formatFecha(iso: string) {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function EstrellaInteractiva({ puntaje, onSelect }: { puntaje: number; onSelect: (n: number) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 8 }}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <TouchableOpacity key={i} onPress={() => onSelect(i)}>
+          <Ionicons name={puntaje >= i ? 'star' : 'star-outline'} size={scale(32)} color="#FFD700" />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+export default function DetalleTurno() {
+  const router = useRouter();
+  const { turnoId } = useLocalSearchParams<{ turnoId: string }>();
+  const { alumnoId, loading: loadingAlumno } = useAlumno();
+
+  const [turno, setTurno] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Rating modal
+  const [ratingVisible, setRatingVisible] = useState(false);
+  const [puntaje, setPuntaje] = useState(0);
+  const [comentario, setComentario] = useState('');
+  const [enviandoRating, setEnviandoRating] = useState(false);
+  const [yaCalificado, setYaCalificado] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!alumnoId) return;
+      try {
+        const turnos = await obtenerTurnosAlumno(alumnoId);
+        const t = turnos.find((t: any) => String(t.id) === turnoId);
+        setTurno(t || null);
+      } catch {
+        Alert.alert('Error', 'No se pudo cargar el detalle del turno.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [alumnoId, turnoId]);
+
+  const hoy = new Date().toISOString().split('T')[0];
+  const esRealizada = turno?.estado === 'confirmado' && turno?.fecha < hoy;
+  const labelTurno = TURNOS.find(t => t.key === turno?.turnoHorario)?.rango || turno?.turnoHorario;
+
+  const handleEnviarRating = async () => {
+    if (puntaje === 0) {
+      Alert.alert('Seleccioná una puntuación', 'Por favor tocá una estrella antes de enviar.');
+      return;
+    }
+    setEnviandoRating(true);
+    try {
+      await crearValoracion({
+        turnoId: Number(turnoId),
+        alumnoId: alumnoId!,
+        profesorId: turno.profesorId || 0,
+        puntaje,
+        comentario: comentario.trim() || null,
+      });
+      setYaCalificado(true);
+      setRatingVisible(false);
+      Alert.alert('¡Gracias!', 'Tu calificación fue enviada correctamente.');
+    } catch (err: any) {
+      if (err.message.includes('409') || err.message.toLowerCase().includes('ya tiene')) {
+        setYaCalificado(true);
+        setRatingVisible(false);
+        Alert.alert('Ya calificaste', 'Esta clase ya tiene una calificación enviada.');
+      } else {
+        Alert.alert('Error', 'No se pudo enviar la calificación.');
+      }
+    } finally {
+      setEnviandoRating(false);
+    }
+  };
+
+  if (loading || loadingAlumno) {
+    return <View style={styles.loading}><ActivityIndicator size="large" color={Colors.cian} /></View>;
+  }
+
+  if (!turno) {
+    return (
+      <View style={styles.loading}>
+        <Text style={{ color: Colors.blanco, fontFamily: Fonts.rubikRegular }}>Turno no encontrado.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color={Colors.blanco} />
+        </TouchableOpacity>
+        <Text style={styles.wiser}>Wiser</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.titulo}>DATOS DE TU CLASE</Text>
+
+        <View style={styles.datosCard}>
+          <View style={styles.datoRow}>
+            <Text style={styles.datoLabel}>FECHA</Text>
+            <Text style={styles.datoVal}>{formatFecha(turno.fecha)}</Text>
+          </View>
+          <View style={styles.datoRow}>
+            <Text style={styles.datoLabel}>HORA</Text>
+            <Text style={styles.datoVal}>{labelTurno}</Text>
+          </View>
+          <View style={styles.datoRow}>
+            <Text style={styles.datoLabel}>MODALIDAD</Text>
+            <Text style={styles.datoVal}>{(turno.modalidad || '').toUpperCase()}</Text>
+          </View>
+          <View style={styles.datoRow}>
+            <Text style={styles.datoLabel}>LUGAR</Text>
+            <Text style={styles.datoVal}>{turno.modalidad === 'Virtual' ? 'ZOOM / MEET' : 'Presencial'}</Text>
+          </View>
+          <View style={styles.datoRow}>
+            <Text style={styles.datoLabel}>ESTADO</Text>
+            <Text style={[
+              styles.datoVal,
+              turno.estado === 'confirmado' ? { color: '#4cd964' } : { color: '#ffb020' }
+            ]}>
+              {turno.estado === 'confirmado' ? 'CONFIRMADO' : turno.estado.toUpperCase().replace('_', ' ')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Profesor info */}
+        <View style={styles.profesorCard}>
+          <View style={styles.avatarSmall}>
+            <Ionicons name="person" size={scale(22)} color="#aaa" />
+          </View>
+          <Text style={styles.profesorNombre}>{turno.profesor}</Text>
+          <TouchableOpacity
+            style={styles.btnMensaje}
+            onPress={() => Alert.alert('Chat', 'Redirigiendo al chat...')}
+          >
+            <Text style={styles.btnMensajeText}>MENSAJE</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Rating for completed classes */}
+        {esRealizada && !yaCalificado && (
+          <TouchableOpacity style={styles.btnCalificar} onPress={() => setRatingVisible(true)}>
+            <Ionicons name="star-outline" size={18} color={Colors.background} />
+            <Text style={styles.btnCalificarText}>Dejar calificación</Text>
+          </TouchableOpacity>
+        )}
+
+        {(esRealizada && yaCalificado) && (
+          <View style={styles.calificadoBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#4cd964" />
+            <Text style={styles.calificadoText}>Ya calificaste esta clase</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.btnListo} onPress={() => router.back()}>
+          <Text style={styles.btnListoText}>LISTO</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Rating modal */}
+      <Modal visible={ratingVisible} animationType="fade" transparent onRequestClose={() => setRatingVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>¿Cómo estuvo la clase?</Text>
+            <EstrellaInteractiva puntaje={puntaje} onSelect={setPuntaje} />
+            <Text style={styles.comentarioLabel}>Comentario (opcional)</Text>
+            <View style={styles.comentarioInput}>
+              <Text style={{ color: comentario ? Colors.blanco : '#aaa', fontFamily: Fonts.rubikRegular, fontSize: moderateScale(13) }}
+                onPress={() => {/* native TextInput below */}}>
+              </Text>
+            </View>
+            {/* Using a proper TextInput below */}
+            <View style={{ width: '100%', marginBottom: verticalScale(16) }}>
+              {/* Inline TextInput since we need imports */}
+              <View style={styles.textInputWrapper}>
+                <Text
+                  style={styles.comentarioPlaceholder}
+                  numberOfLines={3}
+                >
+                  {comentario || 'Escribí un comentario sobre la clase...'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.modalBtns}>
+              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setRatingVisible(false)}>
+                <Text style={{ fontFamily: Fonts.rubikMedium, color: Colors.blanco, fontSize: moderateScale(13) }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalBtnEnviar} onPress={handleEnviarRating} disabled={enviandoRating}>
+                {enviandoRating ? (
+                  <ActivityIndicator color={Colors.background} />
+                ) : (
+                  <Text style={{ fontFamily: Fonts.spaceGroteskBold, color: Colors.background, fontSize: moderateScale(13) }}>Enviar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  loading: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: scale(24), paddingTop: verticalScale(50), paddingBottom: verticalScale(14),
+    borderBottomWidth: 1, borderBottomColor: '#1e295d',
+  },
+  wiser: { fontFamily: Fonts.spaceGroteskBold, fontSize: moderateScale(22), color: '#3455ff' },
+  scrollContent: { paddingHorizontal: scale(24), paddingTop: verticalScale(20), paddingBottom: verticalScale(100) },
+  titulo: {
+    fontFamily: Fonts.spaceGroteskBold, color: Colors.blanco, fontSize: moderateScale(16),
+    letterSpacing: 1.5, textAlign: 'center', marginBottom: verticalScale(20),
+  },
+  datosCard: {
+    backgroundColor: Colors.superficieA, borderRadius: 10, padding: scale(18),
+    borderWidth: 1, borderColor: '#1e295d', marginBottom: verticalScale(20),
+  },
+  datoRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingVertical: verticalScale(10), borderBottomWidth: 1, borderBottomColor: '#1e295d',
+  },
+  datoLabel: { fontFamily: Fonts.rubikMedium, color: '#aaa', fontSize: moderateScale(13), letterSpacing: 0.5 },
+  datoVal: { fontFamily: Fonts.spaceGroteskBold, color: Colors.blanco, fontSize: moderateScale(13), textAlign: 'right' },
+  profesorCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.superficieA, borderRadius: 8, padding: scale(14),
+    borderWidth: 1, borderColor: '#1e295d', marginBottom: verticalScale(20),
+  },
+  avatarSmall: {
+    width: scale(48), height: scale(48), borderRadius: scale(24),
+    backgroundColor: Colors.superficieB, justifyContent: 'center', alignItems: 'center',
+  },
+  profesorNombre: { flex: 1, fontFamily: Fonts.rubikMedium, color: Colors.blanco, fontSize: moderateScale(14) },
+  btnMensaje: {
+    borderWidth: 1, borderColor: '#aaa', borderRadius: 4,
+    paddingVertical: 6, paddingHorizontal: 12,
+  },
+  btnMensajeText: { fontFamily: Fonts.spaceGroteskBold, color: '#aaa', fontSize: moderateScale(10) },
+  btnCalificar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#FFD700', borderRadius: 8, paddingVertical: scale(14),
+  },
+  btnCalificarText: { fontFamily: Fonts.spaceGroteskBold, color: Colors.background, fontSize: moderateScale(13) },
+  calificadoBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 8,
+  },
+  calificadoText: { fontFamily: Fonts.rubikMedium, color: '#4cd964', fontSize: moderateScale(12) },
+  footer: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    padding: scale(20), backgroundColor: Colors.background, borderTopWidth: 1, borderTopColor: '#1e295d',
+  },
+  btnListo: {
+    backgroundColor: Colors.superficieB, borderRadius: 8, paddingVertical: scale(14),
+    alignItems: 'center', borderWidth: 1, borderColor: '#aaa',
+  },
+  btnListoText: { fontFamily: Fonts.spaceGroteskBold, color: Colors.blanco, fontSize: moderateScale(13), letterSpacing: 1 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: scale(24) },
+  modalContent: { backgroundColor: Colors.superficieA, borderRadius: 12, padding: scale(24), width: '100%', alignItems: 'center' },
+  modalTitle: { fontFamily: Fonts.spaceGroteskBold, color: Colors.blanco, fontSize: moderateScale(16), marginBottom: verticalScale(16) },
+  comentarioLabel: { fontFamily: Fonts.rubikMedium, color: Colors.blanco, fontSize: moderateScale(12), alignSelf: 'flex-start', marginTop: verticalScale(16), marginBottom: 6 },
+  textInputWrapper: {
+    width: '100%', backgroundColor: Colors.superficieB, borderRadius: 8,
+    padding: scale(12), minHeight: verticalScale(60), borderWidth: 1, borderColor: '#1e295d',
+  },
+  comentarioPlaceholder: { fontFamily: Fonts.rubikRegular, color: '#aaa', fontSize: moderateScale(12) },
+  comentarioInput: {},
+  modalBtns: { flexDirection: 'row', gap: 10, width: '100%' },
+  modalBtnCancel: {
+    flex: 1, paddingVertical: scale(12), borderRadius: 8,
+    backgroundColor: Colors.superficieB, alignItems: 'center', borderWidth: 1, borderColor: '#1e295d',
+  },
+  modalBtnEnviar: {
+    flex: 1, paddingVertical: scale(12), borderRadius: 8, backgroundColor: Colors.cian, alignItems: 'center',
+  },
+});

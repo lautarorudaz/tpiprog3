@@ -1,76 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator, Image
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/colors';
-import { Fonts } from '../../constants/fonts';
-import { obtenerTurnosProfesor, obtenerUsuarioPorFirebase, actualizarEstadoTurno } from '../../services/apiService';
-import { auth } from '../../services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { Colors } from '../../../constants/colors';
+import { Fonts } from '../../../constants/fonts';
+import { obtenerTurnosProfesor, actualizarEstadoTurno } from '../../../services/apiService';
+import { useProfesor } from '../../../hooks/use-profesor';
 
 export default function ProfesorDashboard() {
-  const router = useRouter();
-  const { firebaseUid } = useLocalSearchParams<{ firebaseUid: string }>();
+  const { usuario, profesorId, nombre, fotoPerfil, loading: loadingUsuario } = useProfesor();
 
-  const [loading, setLoading] = useState(true);
-  const [nombre, setNombre] = useState('Profesor');
-  const [precioHora, setPrecioHora] = useState(0);
-  const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
-  const [solicitudes, setSolicitudes] = useState<any[]>([]);
+  const [loadingTurnos, setLoadingTurnos] = useState(true);
   const [todosLosTurnos, setTodosLosTurnos] = useState<any[]>([]);
 
-  const loadDashboardData = async (uid: string) => {
+  const precioHora = usuario?.profesor?.precioHora || 0;
+  const valoracionPromedio = usuario?.profesor?.valoracionPromedio;
+
+  const loadTurnos = async (id: number) => {
     try {
-      const userObj = await obtenerUsuarioPorFirebase(uid);
-      if (userObj) {
-        setNombre(userObj.nombre || 'Profesor');
-        if (userObj.fotoPerfil) setFotoPerfil(userObj.fotoPerfil);
-        
-        if (userObj.profesor) {
-          setPrecioHora(userObj.profesor.precioHora || 0);
-          const turnos = await obtenerTurnosProfesor(userObj.profesor.id);
-          setTodosLosTurnos(turnos);
-          
-          // Filter requests that are in "pendiente_pago" status (new requests)
-          const nuevas = turnos.filter((t: any) => t.estado === 'pendiente_pago');
-          setSolicitudes(nuevas);
-        }
-      }
-    } catch (err: any) {
+      const turnos = await obtenerTurnosProfesor(id);
+      setTodosLosTurnos(turnos);
+    } catch (err) {
       console.error(err);
       Alert.alert('Error', 'No se pudieron cargar los datos del dashboard.');
     } finally {
-      setLoading(false);
+      setLoadingTurnos(false);
     }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      const uid = firebaseUid || currentUser?.uid;
-      if (uid) {
-        loadDashboardData(uid);
-      } else {
-        setLoading(false);
-        router.replace('/');
-      }
-    });
-    return unsubscribe;
-  }, [firebaseUid]);
+    if (profesorId) loadTurnos(profesorId);
+  }, [profesorId]);
 
-  // Calculate earnings
+  const loading = loadingUsuario || loadingTurnos;
+
+  // Fechas de referencia
   const todayStr = new Date().toISOString().split('T')[0];
-
-  // Current week range
   const now = new Date();
   const currentDay = now.getDay();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
   startOfWeek.setHours(0, 0, 0, 0);
-
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
@@ -84,31 +57,31 @@ export default function ProfesorDashboard() {
   });
   const ingresosSemana = turnosSemana.length * precioHora;
 
+  // Tarjetas de estadísticas
+  const clasesDictadas = todosLosTurnos.filter(t => t.estado === 'confirmado' && t.fecha < todayStr).length;
+  const clasesPendientes = todosLosTurnos.filter(t => t.estado === 'confirmado' && t.fecha >= todayStr).length;
+
+  const solicitudes = todosLosTurnos.filter(t => t.estado === 'pendiente_pago');
+
   const handleAccept = async (turnoId: number) => {
     try {
-      setLoading(true);
+      setLoadingTurnos(true);
       await actualizarEstadoTurno(turnoId, 'confirmado');
-      Alert.alert('Aceptado', 'Has aceptado esta clase correctamente.');
-      const uid = firebaseUid || auth.currentUser?.uid;
-      if (uid) await loadDashboardData(uid);
-    } catch (err: any) {
+      if (profesorId) await loadTurnos(profesorId);
+    } catch {
       Alert.alert('Error', 'No se pudo aceptar la solicitud.');
-    } finally {
-      setLoading(false);
+      setLoadingTurnos(false);
     }
   };
 
   const handleReject = async (turnoId: number) => {
     try {
-      setLoading(true);
+      setLoadingTurnos(true);
       await actualizarEstadoTurno(turnoId, 'rechazado');
-      Alert.alert('Rechazado', 'Has rechazado la solicitud de clase.');
-      const uid = firebaseUid || auth.currentUser?.uid;
-      if (uid) await loadDashboardData(uid);
-    } catch (err: any) {
+      if (profesorId) await loadTurnos(profesorId);
+    } catch {
       Alert.alert('Error', 'No se pudo rechazar la solicitud.');
-    } finally {
-      setLoading(false);
+      setLoadingTurnos(false);
     }
   };
 
@@ -123,7 +96,6 @@ export default function ProfesorDashboard() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
         <Text style={styles.wiser}>Wiser</Text>
 
         {/* Welcome Card */}
@@ -140,6 +112,28 @@ export default function ProfesorDashboard() {
           </View>
         </View>
 
+        {/* Resumen / Estadísticas */}
+        <Text style={styles.sectionTitle}>Resumen</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Ionicons name="checkmark-done-circle-outline" size={scale(20)} color={Colors.cian} />
+            <Text style={styles.statValue}>{clasesDictadas}</Text>
+            <Text style={styles.statLabel}>Clases dictadas</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="time-outline" size={scale(20)} color={Colors.cian} />
+            <Text style={styles.statValue}>{clasesPendientes}</Text>
+            <Text style={styles.statLabel}>Clases pendientes</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Ionicons name="star-outline" size={scale(20)} color={Colors.cian} />
+            <Text style={styles.statValue}>
+              {valoracionPromedio ? valoracionPromedio.toFixed(1) : '—'}
+            </Text>
+            <Text style={styles.statLabel}>Valoración</Text>
+          </View>
+        </View>
+
         {/* Ingresos Section */}
         <Text style={styles.sectionTitle}>Ingresos</Text>
         <View style={styles.ingresosContainer}>
@@ -153,11 +147,11 @@ export default function ProfesorDashboard() {
           </View>
         </View>
 
-        {/* solicitudes Section */}
+        {/* Solicitudes Section */}
         <Text style={styles.sectionTitle}>Nuevas Solicitudes</Text>
         <View style={styles.solicitudesContainer}>
           {solicitudes.length === 0 ? (
-            <Text style={styles.noSolicitudes}>No tienes solicitudes pendientes.</Text>
+            <Text style={styles.noSolicitudes}>No tenés solicitudes pendientes.</Text>
           ) : (
             solicitudes.map((sol) => (
               <View key={sol.id} style={styles.solicitudCard}>
@@ -193,19 +187,6 @@ export default function ProfesorDashboard() {
           )}
         </View>
       </ScrollView>
-
-      {/* Bottom Navigation Tab Bar */}
-      <View style={styles.bottomTab}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => {}}>
-          <Ionicons name="home-sharp" size={24} color={Colors.cian} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => Alert.alert('Agenda', 'Calendario próximamente.')}>
-          <Ionicons name="calendar-outline" size={24} color={Colors.blanco} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => Alert.alert('Chats', 'Conversaciones próximamente.')}>
-          <Ionicons name="chatbubble-outline" size={24} color={Colors.blanco} />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -218,7 +199,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: scale(24),
     paddingTop: verticalScale(30),
-    paddingBottom: verticalScale(80),
+    paddingBottom: verticalScale(40),
   },
   loadingContainer: {
     flex: 1,
@@ -275,6 +256,35 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     letterSpacing: 0.5,
     marginBottom: verticalScale(12),
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: verticalScale(24),
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.superficieA,
+    borderRadius: 8,
+    paddingVertical: scale(14),
+    paddingHorizontal: scale(8),
+    borderWidth: 1,
+    borderColor: '#1e295d',
+    alignItems: 'center',
+  },
+  statValue: {
+    fontFamily: Fonts.spaceGroteskBold,
+    color: Colors.blanco,
+    fontSize: moderateScale(18),
+    marginTop: 6,
+  },
+  statLabel: {
+    fontFamily: Fonts.rubikRegular,
+    color: '#aaa',
+    fontSize: moderateScale(10),
+    textAlign: 'center',
+    marginTop: 2,
   },
   ingresosContainer: {
     flexDirection: 'row',
@@ -371,25 +381,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   acceptBtn: {
-    backgroundColor: '#4cd964', // Green check button
+    backgroundColor: '#4cd964',
   },
   rejectBtn: {
-    backgroundColor: Colors.error, // Red cross button
-  },
-  bottomTab: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: verticalScale(60),
-    backgroundColor: Colors.purpuraOscuro, // Deep purple navbar background
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#1e1b4b',
-  },
-  tabItem: {
-    padding: scale(10),
+    backgroundColor: Colors.error,
   },
 });
