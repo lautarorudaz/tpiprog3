@@ -314,6 +314,9 @@ namespace TP02.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("MotivoCancelacion")
+                        .HasColumnType("text");
+
                     b.Property<int>("ProfesorId")
                         .HasColumnType("integer");
 

@@ -21,6 +21,7 @@ export default function AlumnoAjustes() {
 
   const opciones = [
     { icon: 'person-outline' as const, label: 'Mi perfil', onPress: () => router.push('/alumno/mi-perfil') },
+    { icon: 'settings-outline' as const, label: 'Ajuste de cuenta', onPress: () => router.push('/alumno/ajustes-cuenta') },
     { icon: 'help-circle-outline' as const, label: 'Preguntas frecuentes', onPress: () => router.push('/alumno/preguntas-frecuentes') },
   ];
 

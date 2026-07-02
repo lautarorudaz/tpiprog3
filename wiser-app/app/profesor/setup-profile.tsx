@@ -10,6 +10,7 @@ import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { obtenerMaterias, actualizarPerfilProfesor, obtenerUsuarioPorFirebase } from '../../services/apiService';
 import { auth } from '../../services/firebase';
+import * as Location from 'expo-location';
 import DisponibilidadGrid, { DIAS, TurnoKey, crearDisponibilidadVacia, DisponibilidadValue } from '../../components/disponibilidad-grid';
 
 export default function ProfesorSetupProfile() {
@@ -157,6 +158,18 @@ export default function ProfesorSetupProfile() {
       // Clean price string (e.g. Remove $ or dots/commas)
       const cleanPrice = precioHora.replace(/[^0-9]/g, '');
 
+      let latitud: number | null = null;
+      let longitud: number | null = null;
+      if (lugarDictado.trim()) {
+        try {
+          const results = await Location.geocodeAsync(lugarDictado.trim());
+          if (results.length > 0) {
+            latitud = results[0].latitude;
+            longitud = results[0].longitude;
+          }
+        } catch {}
+      }
+
       const payload = {
         nombre,
         apellido,
@@ -165,8 +178,8 @@ export default function ProfesorSetupProfile() {
         modalidad: selectedModalidad,
         precioHora: parseFloat(cleanPrice) || 0,
         zona: lugarDictado,
-        latitud: null,
-        longitud: null,
+        latitud,
+        longitud,
         materiaIds: mappedMateriaIds,
         disponibilidades: disponibilidadesPayload
       };

@@ -70,11 +70,14 @@ export default function AlumnoSetupProfile() {
       let latitud: number | null = null;
       let longitud: number | null = null;
 
-      const permGps = await Location.requestForegroundPermissionsAsync();
-      if (permGps.status === 'granted') {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        latitud = pos.coords.latitude;
-        longitud = pos.coords.longitude;
+      if (zona.trim()) {
+        try {
+          const results = await Location.geocodeAsync(zona.trim());
+          if (results.length > 0) {
+            latitud = results[0].latitude;
+            longitud = results[0].longitude;
+          }
+        } catch {}
       }
 
       const parts = nombreCompleto.trim().split(' ');

@@ -104,9 +104,15 @@ namespace TP02.Controllers
                     t.TurnoHorario,
                     t.Modalidad,
                     t.Estado,
-                    Materia  = t.Materia.Nombre,
-                    Profesor = $"{t.Profesor.Usuario.Nombre} {t.Profesor.Usuario.Apellido}",
-                    Pago     = t.Pago == null ? null : new { t.Pago.Metodo, t.Pago.Estado, t.Pago.ComprobanteUrl }
+                    Materia        = t.Materia.Nombre,
+                    Profesor       = $"{t.Profesor.Usuario.Nombre} {t.Profesor.Usuario.Apellido}",
+                    ProfesorId     = t.ProfesorId,
+                    ProfesorFoto   = t.Profesor.Usuario.FotoPerfil,
+                    ConversacionId = _db.Conversaciones
+                        .Where(c => c.AlumnoId == alumnoId && c.ProfesorId == t.ProfesorId)
+                        .Select(c => (int?)c.Id)
+                        .FirstOrDefault(),
+                    Pago           = t.Pago == null ? null : new { t.Pago.Metodo, t.Pago.Estado, t.Pago.ComprobanteUrl }
                 })
                 .ToListAsync();
 
