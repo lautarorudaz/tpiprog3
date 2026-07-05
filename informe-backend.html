@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe Técnico Backend — Wiser</title>
+<style>
+  body {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ── Portada ── */
+  .portada {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 60px 40px;
+    background: #f7f8fa;
+    border-bottom: 4px solid #16f0d6;
+  }
+  .portada-logo {
+    font-size: 52pt;
+    font-weight: 700;
+    color: #0d1232;
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+  .portada-logo span {
+    color: #16f0d6;
+  }
+  .portada-titulo {
+    font-size: 22pt;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 24px 0 8px;
+  }
+  .portada-subtitulo {
+    font-size: 13pt;
+    color: #555;
+    margin-bottom: 4px;
+  }
+  .portada-separador {
+    width: 80px;
+    height: 3px;
+    background: #16f0d6;
+    margin: 28px auto;
+  }
+  .portada-info {
+    font-size: 11pt;
+    color: #444;
+    line-height: 1.8;
+  }
+  .portada-info strong {
+    color: #1a1a1a;
+  }
+  .portada-fecha {
+    margin-top: 40px;
+    font-size: 10pt;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Cuerpo ── */
+  .contenido {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 50px 60px;
+  }
+
+  /* Índice */
+  .indice {
+    page-break-after: always;
+  }
+  .indice h2 {
+    font-size: 18pt;
+    color: #0d1232;
+    border-bottom: 2px solid #0d1232;
+    padding-bottom: 6px;
+    margin-bottom: 20px;
+  }
+  .indice ol {
+    font-size: 11pt;
+    line-height: 2;
+    padding-left: 20px;
+  }
+  .indice ol li {
+    color: #1a1a1a;
+  }
+  .indice ol ol {
+    margin-top: 0;
+    list-style-type: decimal;
+  }
+
+  /* Headings */
+  h1 {
+    font-size: 20pt;
+    color: #0d1232;
+    margin-top: 36px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #16f0d6;
+    padding-bottom: 6px;
+  }
+  h2 {
+    font-size: 15pt;
+    color: #1a3a6b;
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+  h3 {
+    font-size: 12pt;
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  /* Párrafos */
+  p {
+    margin: 0 0 12px;
+    text-align: justify;
+  }
+
+  /* Código inline */
+  code {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #eef0f8;
+    color: #1a3a9f;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* Bloques de código */
+  pre {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 9pt;
+    background: #f4f5fa;
+    border-left: 3px solid #16f0d6;
+    padding: 12px 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    color: #1a1a2e;
+    line-height: 1.5;
+  }
+
+  /* Listas */
+  ul, ol {
+    margin: 8px 0 16px;
+    padding-left: 24px;
+  }
+  li {
+    margin-bottom: 5px;
+  }
+
+  /* Tablas */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin: 16px 0;
+  }
+  th {
+    background: #0d1232;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #dde2ee;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td {
+    background: #f7f8fc;
+  }
+
+  /* Badges de estado */
+  .badge {
+    display: inline-block;
+    font-size: 9pt;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+  }
+  .badge-ok   { background: #d1fae5; color: #065f46; }
+  .badge-warn { background: #fef3c7; color: #92400e; }
+  .badge-miss { background: #fee2e2; color: #991b1b; }
+
+  /* Cajas de nota */
+  .nota {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 10px 16px;
+    margin: 16px 0;
+    font-size: 10.5pt;
+    color: #1e3a5f;
+  }
+  .nota strong {
+    color: #1d4ed8;
+  }
+
+  /* Saltos de página para impresión */
+  .salto { page-break-before: always; }
+
+  /* Pie de página */
+  .pie {
+    margin-top: 60px;
+    padding-top: 16px;
+    border-top: 1px solid #ddd;
+    font-size: 9pt;
+    color: #888;
+    text-align: center;
+  }
+
+  @media print {
+    .portada { min-height: 100vh; }
+    h1 { page-break-before: always; }
+    h1:first-of-type { page-break-before: avoid; }
+    pre, table { page-break-inside: avoid; }
+    .contenido { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     PORTADA
+═══════════════════════════════════════════════ -->
+<div class="portada">
+  <div class="portada-logo">Wi<span>ser</span></div>
+  <div class="portada-titulo">Informe Técnico — Backend</div>
+  <div class="portada-subtitulo">Documentación de arquitectura, tecnologías y comunicación con el frontend</div>
+  <div class="portada-separador"></div>
+  <div class="portada-info">
+    <strong>Materia:</strong> Programación III — Trabajo Práctico Integrador<br>
+    <strong>Stack backend:</strong> C# · .NET 8 Web API · Entity Framework Core 8 · PostgreSQL<br>
+    <strong>Stack frontend:</strong> React Native · Expo SDK 54 · TypeScript<br>
+    <strong>Autenticación:</strong> Firebase Authentication + JWT Bearer
+  </div>
+  <div class="portada-fecha">Julio 2026</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     ÍNDICE
+═══════════════════════════════════════════════ -->
+<div class="contenido">
+<div class="indice">
+  <h2>Índice</h2>
+  <ol>
+    <li>Introducción al proyecto Wiser</li>
+    <li>Stack tecnológico del backend</li>
+    <li>Arquitectura general del sistema</li>
+    <li>Base de datos y persistencia <em>(Parte 1 de la rúbrica)</em>
+      <ol>
+        <li>Tablas de dominio propias del negocio</li>
+        <li>Relaciones entre entidades (1-N y N-N)</li>
+        <li>Autenticación y manejo de contraseñas</li>
+        <li>Migraciones y seeders</li>
+        <li>Auditoría: campos de fecha en las entidades</li>
+      </ol>
+    </li>
+    <li>Endpoints y lógica del servidor <em>(Parte 2 de la rúbrica)</em>
+      <ol>
+        <li>Estructura de controladores y HTTP verbs</li>
+        <li>Validaciones en el servidor</li>
+        <li>Arquitectura en capas</li>
+        <li>Manejo de errores y códigos HTTP</li>
+        <li>ORM y persistencia con EF Core</li>
+      </ol>
+    </li>
+    <li>Comunicación backend ↔ frontend <em>(Parte 3 de la rúbrica)</em>
+      <ol>
+        <li>Capa de comunicación en el frontend (apiService.js)</li>
+        <li>Búsqueda y filtros de profesores</li>
+        <li>Paginación</li>
+        <li>Usabilidad y estados de carga</li>
+      </ol>
+    </li>
+    <li>Master-detail y transacciones <em>(Parte 4 de la rúbrica)</em>
+      <ol>
+        <li>Flujos master-detail</li>
+        <li>ABM con cabecera y detalle</li>
+        <li>Transacciones con rollback</li>
+      </ol>
+    </li>
+    <li>Seguridad <em>(Parte 5 de la rúbrica)</em>
+      <ol>
+        <li>Autenticación JWT con Firebase</li>
+        <li>Autorización y rutas protegidas</li>
+        <li>Buenas prácticas de seguridad</li>
+      </ol>
+    </li>
+    <li>Documentación <em>(Parte 6 de la rúbrica)</em></li>
+    <li>Conclusión</li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     1. INTRODUCCIÓN
+═══════════════════════════════════════════════ -->
+<h1>1. Introducción al proyecto Wiser</h1>
+
+<p>Wiser es una plataforma de conexión entre alumnos y profesores particulares. Los alumnos pueden buscar profesores por materia, modalidad, precio y zona geográfica; agendar turnos de clase; comunicarse via chat; y dejar valoraciones. Los profesores gestionan su perfil, disponibilidad horaria, agenda de clases y datos de cobro.</p>
+
+<p>El sistema está compuesto por dos partes: un <strong>backend</strong> implementado como una API REST en C# con .NET 8, y un <strong>frontend</strong> móvil desarrollado en React Native con Expo. Ambas partes se comunican exclusivamente a través de HTTP, sin ningún acoplamiento directo de código entre sí.</p>
+
+<p>Este informe documenta exclusivamente la parte del <strong>backend</strong>: su tecnología, arquitectura, endpoints, seguridad y los momentos en que se comunica con el frontend.</p>
+
+<!-- ═══════════════════════════════════════════════
+     2. STACK TECNOLÓGICO
+═══════════════════════════════════════════════ -->
+<h1 class="salto">2. Stack tecnológico del backend</h1>
+
+<table>
+  <tr>
+    <th>Componente</th>
+    <th>Tecnología</th>
+    <th>Versión</th>
+    <th>Rol</th>
+  </tr>
+  <tr>
+    <td>Framework web</td>
+    <td>ASP.NET Core Web API</td>
+    <td>.NET 8</td>
+    <td>Exposición de endpoints HTTP REST</td>
+  </tr>
+  <tr>
+    <td>ORM</td>
+    <td>Entity Framework Core</td>
+    <td>8.0.4</td>
+    <td>Mapeo objeto-relacional y migraciones</td>
+  </tr>
+  <tr>
+    <td>Base de datos</td>
+    <td>PostgreSQL</td>
+    <td>15+</td>
+    <td>Almacenamiento persistente de datos</td>
+  </tr>
+  <tr>
+    <td>Driver de BD</td>
+    <td>Npgsql.EntityFrameworkCore.PostgreSQL</td>
+    <td>8.0.4</td>
+    <td>Conexión EF Core ↔ PostgreSQL</td>
+  </tr>
+  <tr>
+    <td>Autenticación</td>
+    <td>Firebase Authentication</td>
+    <td>—</td>
+    <td>Emisión de tokens JWT en el cliente</td>
+  </tr>
+  <tr>
+    <td>Validación JWT</td>
+    <td>Microsoft.AspNetCore.Authentication.JwtBearer</td>
+    <td>8.0.4</td>
+    <td>Validación de tokens Firebase en el servidor</td>
+  </tr>
+  <tr>
+    <td>Documentación API</td>
+    <td>Swagger / OpenAPI (Swashbuckle)</td>
+    <td>6.5.0</td>
+    <td>Interfaz de pruebas y documentación REST</td>
+  </tr>
+  <tr>
+    <td>Lenguaje</td>
+    <td>C# 12</td>
+    <td>—</td>
+    <td>Lenguaje de programación del backend</td>
+  </tr>
+</table>
+
+<p>El proyecto backend se encuentra en la carpeta <code>prog3tpi/</code> del repositorio y expone su API por defecto en el puerto <strong>5000</strong>, escuchando en todas las interfaces de red (<code>0.0.0.0:5000</code>) para que el dispositivo móvil pueda conectarse estando en la misma red Wi-Fi.</p>
+
+<!-- ═══════════════════════════════════════════════
+     3. ARQUITECTURA GENERAL
+═══════════════════════════════════════════════ -->
+<h1 class="salto">3. Arquitectura general del sistema</h1>
+
+<p>El backend sigue el patrón de <strong>API REST</strong> con una arquitectura de dos capas principales:</p>
+
+<ul>
+  <li><strong>Capa de presentación (Controllers):</strong> recibe las requests HTTP, valida los datos de entrada, ejecuta la lógica de negocio y devuelve respuestas JSON.</li>
+  <li><strong>Capa de acceso a datos (EF Core + AppDbContext):</strong> abstrae la comunicación con PostgreSQL mediante el ORM Entity Framework Core, utilizando LINQ para construir queries tipadas.</li>
+</ul>
+
+<p>La estructura de carpetas del proyecto backend es la siguiente:</p>
+
+<pre>
+prog3tpi/
+├── Controllers/          ← Controladores de la API (7 archivos)
+│   ├── UsuarioController.cs
+│   ├── ProfesorController.cs
+│   ├── AlumnoController.cs
+│   ├── TurnoController.cs
+│   ├── ChatController.cs
+│   ├── ValoracionController.cs
+│   └── MateriaController.cs
+├── Models/               ← Entidades del dominio
+│   ├── Usuario.cs
+│   ├── Profesor.cs
+│   ├── Alumno.cs
+│   ├── Materia.cs
+│   └── Extras.cs         ← Turno, Pago, Conversacion, Mensaje, etc.
+├── Data/
+│   └── AppDbContext.cs   ← Configuración de EF Core, relaciones y constraints
+├── Migrations/           ← Migraciones de base de datos
+├── Program.cs            ← Configuración de servicios, middleware, autenticación
+└── Appsettings.json      ← Connection string, Firebase Project ID, logging
+</pre>
+
+<p>El punto de entrada de la aplicación es <code>Program.cs</code>, donde se configuran todos los servicios: el contexto de base de datos, la autenticación JWT, CORS, Swagger y el pipeline de middleware de ASP.NET Core.</p>
+
+<!-- ═══════════════════════════════════════════════
+     4. BASE DE DATOS Y PERSISTENCIA  (Parte 1)
+═══════════════════════════════════════════════ -->
+<h1 class="salto">4. Base de datos y persistencia</h1>
+<p><em>Corresponde a la Parte 1 de la rúbrica (25 puntos).</em></p>
+
+<h2>4.1 Tablas de dominio propias del negocio</h2>
+
+<p>El modelo de datos del proyecto cuenta con <strong>11 entidades propias del dominio</strong>, cada una representada como una clase en C# y su correspondiente tabla en PostgreSQL. Estas entidades capturan todos los conceptos del negocio de Wiser:</p>
+
+<table>
+  <tr>
+    <th>Entidad</th>
+    <th>Archivo</th>
+    <th>Descripción</th>
+  </tr>
+  <tr>
+    <td>Usuario</td>
+    <td><code>Models/Usuario.cs</code></td>
+    <td>Cuenta de usuario (alumno o profesor). Vinculada a Firebase mediante el campo FirebaseUid.</td>
+  </tr>
+  <tr>
+    <td>Alumno</td>
+    <td><code>Models/Alumno.cs</code></td>
+    <td>Perfil extendido del alumno: zona deseada y coordenadas geográficas.</td>
+  </tr>
+  <tr>
+    <td>Profesor</td>
+    <td><code>Models/Profesor.cs</code></td>
+    <td>Perfil del profesor: título, descripción, modalidad, precio por hora, zona y coordenadas.</td>
+  </tr>
+  <tr>
+    <td>Materia</td>
+    <td><code>Models/Materia.cs</code></td>
+    <td>Asignatura con nivel (primario, secundario, universitario).</td>
+  </tr>
+  <tr>
+    <td>Disponibilidad</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>Franjas horarias habilitadas por el profesor (día + turno mañana/tarde/noche).</td>
+  </tr>
+  <tr>
+    <td>Turno</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>Reserva de clase entre un alumno y un profesor para una fecha y materia específicas.</td>
+  </tr>
+  <tr>
+    <td>Pago</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>Pago asociado a un turno: método, estado, URL del comprobante y fecha de pago.</td>
+  </tr>
+  <tr>
+    <td>Conversacion</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>Hilo de chat entre un alumno y un profesor específico.</td>
+  </tr>
+  <tr>
+    <td>Mensaje</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>Mensaje dentro de una conversación: contenido, remitente, fecha y estado de lectura.</td>
+  </tr>
+  <tr>
+    <td>Valoracion</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>Calificación (1-5 estrellas) y comentario que el alumno deja al profesor tras un turno.</td>
+  </tr>
+  <tr>
+    <td>DatosBancarios</td>
+    <td><code>Models/Extras.cs</code></td>
+    <td>CBU, alias, banco y titular de la cuenta del profesor para recibir pagos.</td>
+  </tr>
+</table>
+
+<h2>4.2 Relaciones entre entidades</h2>
+
+<p>Las relaciones entre entidades están configuradas en <code>Data/AppDbContext.cs</code> usando la API fluida de Entity Framework Core.</p>
+
+<h3>Relación N-N: Profesor ↔ Materia</h3>
+<p>Un profesor puede enseñar varias materias y una materia puede ser enseñada por varios profesores. EF Core genera automáticamente la tabla intermedia <code>MateriaProfesor</code> con las claves foráneas de ambas entidades.</p>
+
+<h3>Relaciones 1-N</h3>
+<ul>
+  <li><strong>Profesor → Turnos:</strong> un profesor tiene muchos turnos.</li>
+  <li><strong>Alumno → Turnos:</strong> un alumno tiene muchos turnos.</li>
+  <li><strong>Profesor → Disponibilidades:</strong> un profesor define muchas franjas horarias.</li>
+  <li><strong>Profesor → DatosBancarios:</strong> un profesor puede tener sus datos bancarios registrados.</li>
+  <li><strong>Profesor → Valoraciones:</strong> un profesor recibe muchas valoraciones.</li>
+  <li><strong>Conversacion → Mensajes:</strong> una conversación contiene muchos mensajes.</li>
+</ul>
+
+<h3>Relaciones 1-1</h3>
+<ul>
+  <li><strong>Usuario → Alumno:</strong> cada cuenta de tipo alumno tiene un perfil Alumno asociado.</li>
+  <li><strong>Usuario → Profesor:</strong> cada cuenta de tipo profesor tiene un perfil Profesor asociado.</li>
+  <li><strong>Turno → Pago:</strong> cada turno tiene exactamente un pago asociado.</li>
+</ul>
+
+<h3>Restricciones de integridad</h3>
+<p>Configuradas en <code>AppDbContext.cs</code>:</p>
+<ul>
+  <li><strong>Restricción única en Conversacion:</strong> no pueden existir dos conversaciones entre el mismo alumno y el mismo profesor.</li>
+  <li><strong>Restricción única en Disponibilidad:</strong> un profesor no puede tener dos disponibilidades para el mismo día y turno.</li>
+  <li><strong>Check constraint en Valoracion:</strong> el campo Puntaje debe estar entre 1 y 5 inclusive.</li>
+</ul>
+
+<h2>4.3 Autenticación y manejo de contraseñas</h2>
+
+<p>El sistema delega la autenticación a <strong>Firebase Authentication</strong> (Identity Provider externo de Google). Firebase se encarga de almacenar las contraseñas de forma segura usando su propio sistema de hashing (bcrypt con salt), emite tokens JWT firmados, y gestiona bloqueos por intentos fallidos.</p>
+
+<p>En la base de datos propia del proyecto, la entidad <code>Usuario</code> no almacena contraseñas. En su lugar, contiene el campo <code>FirebaseUid</code>, que es el identificador único que Firebase asigna a cada cuenta. Este UID vincula la identidad de Firebase con el perfil local en PostgreSQL.</p>
+
+<div class="nota">
+  <strong>Nota:</strong> La decisión de delegar la autenticación a Firebase elimina la responsabilidad de gestionar hash+salt propio en la base de datos, trasladando esa responsabilidad a un servicio especializado y auditado.
+</div>
+
+<h2>4.4 Migraciones y seeders</h2>
+
+<p>El esquema de la base de datos se gestiona a través del sistema de <strong>migraciones de Entity Framework Core</strong>. Cada migración es un archivo C# en la carpeta <code>Migrations/</code> que describe los cambios incrementales aplicados a la base de datos. Para aplicar todas las migraciones y crear las tablas, se ejecuta el comando:</p>
+
+<pre>dotnet ef database update</pre>
+
+<p>El sistema incluye un <strong>seeder de materias</strong> implementado en <code>MateriaController.ObtenerTodas()</code>: al recibir el primer request a <code>GET /api/materia</code>, si la tabla está vacía, inserta automáticamente 11 materias predefinidas que cubren los tres niveles educativos (primario, secundario y universitario).</p>
+
+<h2>4.5 Auditoría: campos de fecha</h2>
+
+<p>Todas las entidades del dominio cuentan con campos de auditoría que registran su fecha de creación. Estos campos se inicializan automáticamente con la fecha y hora UTC en el momento de la creación del objeto:</p>
+
+<table>
+  <tr>
+    <th>Entidad</th>
+    <th>Campo de auditoría</th>
+  </tr>
+  <tr><td>Usuario</td><td><code>CreadoEn</code></td></tr>
+  <tr><td>Profesor</td><td><code>CreadoEn</code></td></tr>
+  <tr><td>Alumno</td><td><code>CreadoEn</code></td></tr>
+  <tr><td>Turno</td><td><code>CreadoEn</code></td></tr>
+  <tr><td>Disponibilidad</td><td><code>CreadoEn</code></td></tr>
+  <tr><td>DatosBancarios</td><td><code>CreadoEn</code></td></tr>
+  <tr><td>Conversacion</td><td><code>CreadaEn</code></td></tr>
+  <tr><td>Mensaje</td><td><code>EnviadoEn</code></td></tr>
+  <tr><td>Valoracion</td><td><code>FechaValoracion</code></td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════
+     5. ENDPOINTS Y LÓGICA DEL SERVIDOR  (Parte 2)
+═══════════════════════════════════════════════ -->
+<h1 class="salto">5. Endpoints y lógica del servidor</h1>
+<p><em>Corresponde a la Parte 2 de la rúbrica (30 puntos).</em></p>
+
+<h2>5.1 Estructura de controladores y HTTP verbs</h2>
+
+<p>El backend expone sus funcionalidades a través de <strong>7 controladores</strong>, cada uno agrupando los endpoints relacionados con una entidad o área funcional. Todos los controladores derivan de <code>ControllerBase</code> (sin vistas) y utilizan el atributo <code>[ApiController]</code>, que activa automáticamente la validación de modelos.</p>
+
+<table>
+  <tr>
+    <th>Controlador</th>
+    <th>Prefijo de ruta</th>
+    <th>Endpoints principales</th>
+  </tr>
+  <tr>
+    <td>UsuarioController</td>
+    <td><code>/api/usuario</code></td>
+    <td>POST registro, GET por Firebase UID, PUT cuenta</td>
+  </tr>
+  <tr>
+    <td>ProfesorController</td>
+    <td><code>/api/profesor</code></td>
+    <td>GET búsqueda paginada, GET perfil, PUT perfil, GET/PUT datos bancarios</td>
+  </tr>
+  <tr>
+    <td>AlumnoController</td>
+    <td><code>/api/alumno</code></td>
+    <td>GET perfil, PUT perfil</td>
+  </tr>
+  <tr>
+    <td>TurnoController</td>
+    <td><code>/api/turno</code></td>
+    <td>GET disponibles, POST crear, GET por alumno, GET por profesor, PUT estado, PUT cancelar, POST comprobante</td>
+  </tr>
+  <tr>
+    <td>ChatController</td>
+    <td><code>/api/chat</code></td>
+    <td>GET chats del profesor, GET chats del alumno, GET mensajes (con marca de leído), POST enviar mensaje</td>
+  </tr>
+  <tr>
+    <td>ValoracionController</td>
+    <td><code>/api/valoracion</code></td>
+    <td>GET valoraciones del profesor, POST crear valoración</td>
+  </tr>
+  <tr>
+    <td>MateriaController</td>
+    <td><code>/api/materia</code></td>
+    <td>GET todas las materias (con seeder automático)</td>
+  </tr>
+</table>
+
+<p>Los verbos HTTP utilizados siguen la convención REST:</p>
+<ul>
+  <li><strong>GET</strong> — consultas de datos (búsqueda de profesores, turnos, chats, mensajes).</li>
+  <li><strong>POST</strong> — creación de recursos (turno, mensaje, valoración, comprobante de pago, registro de usuario).</li>
+  <li><strong>PUT</strong> — actualización de recursos existentes (perfil del profesor/alumno, estado de turno, cancelación, datos bancarios).</li>
+</ul>
+
+<h2>5.2 Validaciones en el servidor</h2>
+
+<p>Todos los objetos de transferencia de datos (<strong>DTOs</strong>) recibidos en los endpoints tienen anotaciones de validación del namespace <code>System.ComponentModel.DataAnnotations</code>. Gracias al atributo <code>[ApiController]</code> en cada controlador, ASP.NET Core valida automáticamente el modelo antes de ejecutar el método del controlador: si el cuerpo del request no cumple las restricciones, devuelve una respuesta <strong>400 Bad Request</strong> con detalle de los errores sin necesidad de código adicional.</p>
+
+<p>Las anotaciones utilizadas por DTO son:</p>
+
+<table>
+  <tr>
+    <th>DTO</th>
+    <th>Validaciones aplicadas</th>
+  </tr>
+  <tr>
+    <td>RegistroDto</td>
+    <td><code>[Required]</code> en FirebaseUid y Email; <code>[EmailAddress]</code> en Email; <code>[StringLength(100)]</code> en Nombre y Apellido</td>
+  </tr>
+  <tr>
+    <td>EditarProfesorDto</td>
+    <td><code>[Required][StringLength(100)]</code> en Nombre/Apellido; <code>[StringLength(1000)]</code> en Descripcion; <code>[Range(0, 1000000)]</code> en PrecioHora; <code>[Range(-90,90)]</code> en Latitud; <code>[Range(-180,180)]</code> en Longitud</td>
+  </tr>
+  <tr>
+    <td>CrearTurnoDto</td>
+    <td><code>[Required]</code> en ProfesorId, AlumnoId, MateriaId y Fecha</td>
+  </tr>
+  <tr>
+    <td>CrearValoracionDto</td>
+    <td><code>[Required]</code> en TurnoId/AlumnoId/ProfesorId; <code>[Range(1, 5)]</code> en Puntaje; <code>[StringLength(500)]</code> en Comentario</td>
+  </tr>
+  <tr>
+    <td>EnviarMensajeDto</td>
+    <td><code>[Required]</code> en ConversacionId/RemitenteId; <code>[Required][StringLength(2000)]</code> en Contenido</td>
+  </tr>
+  <tr>
+    <td>EditarAlumnoDto</td>
+    <td><code>[Required][StringLength(100)]</code> en Nombre/Apellido; <code>[Range(-90,90)]</code> y <code>[Range(-180,180)]</code> en coordenadas</td>
+  </tr>
+</table>
+
+<h2>5.3 Arquitectura en capas</h2>
+
+<p>El backend está estructurado en <strong>dos capas</strong>:</p>
+<ol>
+  <li><strong>Capa de Controladores</strong> (<code>Controllers/</code>): recibe los requests HTTP, ejecuta la lógica de negocio (verificación de disponibilidad, creación de recursos compuestos) y devuelve respuestas JSON.</li>
+  <li><strong>Capa de Acceso a Datos</strong> (<code>Data/AppDbContext.cs</code> + EF Core): gestiona la comunicación con PostgreSQL a través del ORM, encapsulando las queries en métodos LINQ tipados.</li>
+</ol>
+
+<div class="nota">
+  <strong>Nota:</strong> No se implementó una capa de servicio (Service Layer) ni patrón Repository de forma explícita. La lógica de negocio reside en los controladores, lo que concentra la responsabilidad pero simplifica la estructura del proyecto.
+</div>
+
+<h2>5.4 Manejo de errores y códigos HTTP</h2>
+
+<p>Cada endpoint devuelve el código HTTP apropiado según el resultado de la operación:</p>
+<ul>
+  <li><strong>200 OK</strong> — operación exitosa.</li>
+  <li><strong>400 Bad Request</strong> — datos de entrada inválidos (validación automática del modelo).</li>
+  <li><strong>401 Unauthorized</strong> — token JWT ausente o inválido (gestionado por el middleware).</li>
+  <li><strong>403 Forbidden</strong> — el usuario autenticado no tiene permisos para la operación solicitada.</li>
+  <li><strong>404 Not Found</strong> — el recurso solicitado no existe en la base de datos.</li>
+  <li><strong>409 Conflict</strong> — la operación entraría en conflicto con datos existentes (por ejemplo, intentar reservar un turno ya ocupado).</li>
+  <li><strong>500 Internal Server Error</strong> — error no controlado devuelto como JSON por el handler global.</li>
+</ul>
+
+<p>En <code>Program.cs</code> se configura un <strong>middleware global de manejo de excepciones</strong> (<code>UseExceptionHandler</code>) que captura cualquier excepción no controlada y devuelve una respuesta JSON con el formato <code>{"error": "Error interno del servidor."}</code> en lugar de exponer el stack trace.</p>
+
+<h2>5.5 ORM y persistencia con Entity Framework Core</h2>
+
+<p>Entity Framework Core 8 es el ORM que abstrae la comunicación con PostgreSQL. Su uso en el proyecto incluye:</p>
+<ul>
+  <li><strong>Include / ThenInclude</strong> para cargar relaciones de forma eager loading (evitar N+1 queries).</li>
+  <li><strong>AsQueryable()</strong> para construir queries dinámicas con filtros opcionales (búsqueda de profesores).</li>
+  <li><strong>Proyecciones anónimas con Select()</strong> para devolver solo los campos necesarios en cada endpoint, sin exponer la entidad completa.</li>
+  <li><strong>AnyAsync(), FirstOrDefaultAsync(), CountAsync()</strong> para operaciones de consulta asíncronas.</li>
+  <li><strong>Skip() / Take()</strong> para paginación server-side.</li>
+  <li><strong>Enums como strings:</strong> todos los enums del dominio (estados de turno, roles, modalidades) se serializan como texto legible usando <code>JsonStringEnumConverter</code>.</li>
+  <li><strong>camelCase automático:</strong> configurado en <code>Program.cs</code> con <code>PropertyNamingPolicy = JsonNamingPolicy.CamelCase</code> para que la API devuelva JSON en el formato esperado por el frontend JavaScript.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════
+     6. COMUNICACIÓN BACKEND ↔ FRONTEND  (Parte 3)
+═══════════════════════════════════════════════ -->
+<h1 class="salto">6. Comunicación backend ↔ frontend</h1>
+<p><em>Corresponde a la Parte 3 de la rúbrica (20 puntos).</em></p>
+
+<p>El frontend (aplicación React Native) y el backend se comunican a través de <strong>HTTP REST</strong>. No existe ningún acoplamiento de código entre ambas partes: el frontend sólo conoce la URL base de la API y el contrato de los endpoints (rutas, métodos HTTP y formato JSON de los datos).</p>
+
+<h2>6.1 Capa de comunicación: apiService.js</h2>
+
+<p>Toda la lógica de comunicación con la API está centralizada en el archivo <code>wiser-app/services/apiService.js</code>. Este archivo define una función <code>authFetch()</code> que actúa como wrapper de la función nativa <code>fetch</code>:</p>
+
+<pre>
+const authFetch = async (url, options = {}) => {
+  const user = auth.currentUser;          // usuario logueado en Firebase
+  const token = user ? await user.getIdToken() : null;
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+  return fetch(url, { ...options, headers });
+};
+</pre>
+
+<p>Esta función obtiene automáticamente el <strong>JWT emitido por Firebase</strong> para el usuario actualmente logueado y lo agrega a cada request como cabecera <code>Authorization: Bearer &lt;token&gt;</code>. El backend valida ese token en cada request protegido.</p>
+
+<p>Sobre <code>authFetch()</code> se construyen todas las funciones exportadas del servicio, una por cada operación disponible en la API:</p>
+
+<ul>
+  <li><code>buscarProfesores(params)</code> — búsqueda paginada de profesores con filtros.</li>
+  <li><code>obtenerPerfilProfesor(profesorId)</code> — perfil completo de un profesor.</li>
+  <li><code>actualizarPerfilProfesor(profesorId, data)</code> — edición del perfil.</li>
+  <li><code>obtenerTurnosAlumno(alumnoId)</code> / <code>obtenerTurnosProfesor(profesorId)</code> — agenda de turnos.</li>
+  <li><code>crearTurno(data)</code> — reserva de un turno con pago.</li>
+  <li><code>actualizarEstadoTurno(turnoId, estado)</code> — confirmación o rechazo por el profesor.</li>
+  <li><code>obtenerChats(profesorId)</code> / <code>obtenerChatsAlumno(alumnoId)</code> — lista de conversaciones.</li>
+  <li><code>obtenerMensajes(conversacionId, lectorId)</code> — historial de mensajes y marca de leído.</li>
+  <li><code>enviarMensaje(conversacionId, remitenteId, contenido)</code> — envío de un mensaje.</li>
+  <li><code>crearValoracion(data)</code> — calificación de un turno realizado.</li>
+  <li>Y más: datos bancarios, comprobante de pago, cancelación de turno, etc.</li>
+</ul>
+
+<h3>Momentos de comunicación frontend ↔ backend</h3>
+
+<p>La comunicación ocurre en los siguientes momentos del flujo de la aplicación:</p>
+
+<table>
+  <tr>
+    <th>Momento en la app</th>
+    <th>Pantalla</th>
+    <th>Endpoint invocado</th>
+  </tr>
+  <tr>
+    <td>Registro de cuenta</td>
+    <td>register.tsx → select-role</td>
+    <td>POST /api/usuario/registro</td>
+  </tr>
+  <tr>
+    <td>Inicio de sesión</td>
+    <td>index.tsx (login)</td>
+    <td>GET /api/usuario/firebase/{uid}</td>
+  </tr>
+  <tr>
+    <td>Configuración inicial del perfil</td>
+    <td>setup-profile.tsx</td>
+    <td>GET /api/materia · PUT /api/profesor/{id}</td>
+  </tr>
+  <tr>
+    <td>Búsqueda de profesores</td>
+    <td>alumno/dashboard.tsx</td>
+    <td>GET /api/profesor?nombre=&amp;materiaId=&amp;page=</td>
+  </tr>
+  <tr>
+    <td>Ver perfil de un profesor</td>
+    <td>perfil-profesor.tsx</td>
+    <td>GET /api/profesor/{id} · GET /api/valoracion/profesor/{id}</td>
+  </tr>
+  <tr>
+    <td>Agendar un turno</td>
+    <td>agendar-turno.tsx</td>
+    <td>GET /api/turno/disponibles/{profesorId} · POST /api/turno</td>
+  </tr>
+  <tr>
+    <td>Subir comprobante de pago</td>
+    <td>mis-turnos.tsx</td>
+    <td>POST /api/turno/{id}/comprobante</td>
+  </tr>
+  <tr>
+    <td>Confirmar/rechazar turno</td>
+    <td>profesor/dashboard.tsx</td>
+    <td>PUT /api/turno/{id}/estado</td>
+  </tr>
+  <tr>
+    <td>Lista de chats</td>
+    <td>chats.tsx (alumno y profesor)</td>
+    <td>GET /api/chat/alumno/{id} · GET /api/chat/profesor/{id}</td>
+  </tr>
+  <tr>
+    <td>Mensajes (con polling)</td>
+    <td>chat-detail.tsx</td>
+    <td>GET /api/chat/{conversacionId}/mensajes (cada 5 segundos)</td>
+  </tr>
+  <tr>
+    <td>Enviar mensaje</td>
+    <td>chat-detail.tsx</td>
+    <td>POST /api/chat/mensaje</td>
+  </tr>
+  <tr>
+    <td>Calificar un turno</td>
+    <td>mis-turnos.tsx</td>
+    <td>POST /api/valoracion</td>
+  </tr>
+  <tr>
+    <td>Dashboard del profesor</td>
+    <td>profesor/dashboard.tsx</td>
+    <td>GET /api/turno/profesor/{profesorId}</td>
+  </tr>
+</table>
+
+<h2>6.2 Búsqueda y filtros de profesores</h2>
+
+<p>El endpoint <code>GET /api/profesor</code> acepta <strong>5 parámetros de filtro opcionales</strong> en el query string:</p>
+
+<ul>
+  <li><code>nombre</code> — búsqueda por nombre o apellido (contiene, sin distinción de mayúsculas).</li>
+  <li><code>materiaId</code> — filtra por ID de materia enseñada.</li>
+  <li><code>zona</code> — filtra por zona geográfica (texto parcial).</li>
+  <li><code>precioMaximo</code> — filtra profesores con precio por hora menor o igual al valor indicado.</li>
+  <li><code>modalidad</code> — filtra por modalidad (presencial, virtual, híbrida).</li>
+</ul>
+
+<p>En el frontend, el alumno dispone de una barra de búsqueda por nombre y chips de selección de materia. Ambos inputs aplican un <strong>debounce de 400 ms</strong> antes de lanzar el request a la API, evitando requests innecesarios mientras el usuario escribe.</p>
+
+<h2>6.3 Paginación</h2>
+
+<p>El endpoint de búsqueda de profesores implementa paginación server-side. El backend acepta los parámetros:</p>
+<ul>
+  <li><code>page</code> — número de página (por defecto: 1).</li>
+  <li><code>pageSize</code> — cantidad de resultados por página (por defecto: 10, máximo: 50).</li>
+</ul>
+
+<p>La respuesta devuelve un objeto con metadatos de paginación y los resultados ordenados por valoración promedio descendente:</p>
+
+<pre>
+{
+  "total": 47,
+  "page": 1,
+  "pageSize": 10,
+  "totalPaginas": 5,
+  "datos": [ ... ]
+}
+</pre>
+
+<p>El frontend acumula los resultados de páginas sucesivas en el estado local. Muestra un contador <em>"X de Y profesores"</em> y un botón <em>"Ver más resultados"</em> que carga la siguiente página sin reemplazar los resultados anteriores.</p>
+
+<h2>6.4 Usabilidad en la comunicación</h2>
+
+<p>El frontend implementa varias estrategias para mejorar la experiencia de usuario durante la comunicación con la API:</p>
+<ul>
+  <li><strong>ActivityIndicator:</strong> muestra un spinner de carga mientras se espera la respuesta del servidor.</li>
+  <li><strong>Alert.alert():</strong> notifica al usuario en caso de error de red o respuesta de error de la API.</li>
+  <li><strong>RefreshControl:</strong> permite al usuario actualizar manualmente la lista de chats y turnos deslizando hacia abajo (pull-to-refresh).</li>
+  <li><strong>useFocusEffect:</strong> recarga automáticamente los datos cada vez que el usuario regresa a una pantalla (por ejemplo, al volver a la lista de chats después de leer un mensaje).</li>
+  <li><strong>Polling automático:</strong> en la pantalla de chat-detail, los mensajes se recargan cada 5 segundos para mostrar nuevos mensajes sin que el usuario tenga que hacer nada.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════
+     7. MASTER-DETAIL Y TRANSACCIONES  (Parte 4)
+═══════════════════════════════════════════════ -->
+<h1 class="salto">7. Master-detail y transacciones</h1>
+<p><em>Corresponde a la Parte 4 de la rúbrica (10 puntos).</em></p>
+
+<h2>7.1 Flujos master-detail</h2>
+
+<p>La aplicación implementa el patrón <strong>master-detail</strong> en tres flujos principales:</p>
+
+<ol>
+  <li><strong>Profesores:</strong> el alumno ve una lista de profesores en su dashboard (master) y puede acceder al perfil completo de cada uno (detail), con información extendida de materias, valoraciones, disponibilidad y botón para agendar.</li>
+  <li><strong>Chats:</strong> la pantalla de chats muestra la lista de conversaciones activas (master). Al tocar una, accede al historial completo de mensajes de esa conversación (detail).</li>
+  <li><strong>Turnos:</strong> la pantalla de mis turnos lista todos los turnos del alumno o el profesor (master). Cada turno muestra su estado de pago, acciones disponibles y la posibilidad de calificar al profesor (detail).</li>
+</ol>
+
+<h2>7.2 ABM con cabecera y detalle</h2>
+
+<p>El sistema implementa operaciones compuestas donde se crean o modifican simultáneamente una entidad cabecera y sus entidades detalle:</p>
+
+<h3>Turno + Pago + Conversacion (POST /api/turno)</h3>
+<p>Cuando un alumno reserva un turno, el endpoint <code>POST /api/turno</code> crea en una sola operación:</p>
+<ul>
+  <li>El <strong>Turno</strong> (cabecera) con la información de la clase (fecha, horario, materia, modalidad).</li>
+  <li>El <strong>Pago</strong> (detalle) asociado al turno, inicializado en estado pendiente con el método de pago elegido.</li>
+  <li>La <strong>Conversacion</strong> entre el alumno y el profesor, si aún no existía una previa.</li>
+</ul>
+
+<h3>Profesor + Disponibilidades + Materias (PUT /api/profesor/{id})</h3>
+<p>Al editar su perfil, el profesor actualiza en una sola operación:</p>
+<ul>
+  <li>Sus datos básicos (<strong>Profesor</strong> cabecera): título, descripción, modalidad, precio, zona.</li>
+  <li>Sus <strong>Disponibilidades</strong> horarias: se eliminan las anteriores y se crean las nuevas.</li>
+  <li>Su relación N-N con <strong>Materias</strong>: se limpia la colección y se reconstruye con los IDs seleccionados.</li>
+</ul>
+
+<h2>7.3 Transacciones con rollback</h2>
+
+<p>Las operaciones compuestas que involucran múltiples <code>SaveChangesAsync()</code> están protegidas por <strong>transacciones de base de datos explícitas</strong>. Esto garantiza que si alguno de los pasos falla, todos los cambios anteriores de esa operación se revierten, evitando datos inconsistentes.</p>
+
+<p>Ejemplo en <code>TurnoController.Crear()</code>:</p>
+
+<pre>
+using var tx = await _db.Database.BeginTransactionAsync();
+try
+{
+    _db.Turnos.Add(turno);
+    await _db.SaveChangesAsync();          // 1° save: persiste el Turno y genera su Id
+
+    _db.Pagos.Add(new Pago { TurnoId = turno.Id, ... });   // usa el Id del Turno
+    if (convExistente == null)
+        _db.Conversaciones.Add(new Conversacion { ... });
+
+    await _db.SaveChangesAsync();          // 2° save: persiste Pago y Conversacion
+    await tx.CommitAsync();
+
+    return Ok(new { turno.Id, turno.Estado, ... });
+}
+catch
+{
+    await tx.RollbackAsync();              // revierte el 1° save si el 2° falla
+    return StatusCode(500, "Error al crear el turno.");
+}
+</pre>
+
+<p>El mismo patrón se aplica en <code>UsuarioController.Registro()</code>, donde primero se persiste el <code>Usuario</code> para obtener su Id, y luego se crea el <code>Alumno</code> o <code>Profesor</code> asociado.</p>
+
+<!-- ═══════════════════════════════════════════════
+     8. SEGURIDAD  (Parte 5)
+═══════════════════════════════════════════════ -->
+<h1 class="salto">8. Seguridad</h1>
+<p><em>Corresponde a la Parte 5 de la rúbrica (10 puntos).</em></p>
+
+<h2>8.1 Autenticación JWT con Firebase</h2>
+
+<p>El flujo de autenticación funciona de la siguiente manera:</p>
+
+<ol>
+  <li>El usuario se registra o inicia sesión en el <strong>frontend</strong> usando Firebase Authentication (email+contraseña).</li>
+  <li>Firebase emite un <strong>token JWT</strong> firmado con las claves privadas de Google.</li>
+  <li>El frontend adjunta ese token en cada request a la API como cabecera <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+  <li>El <strong>backend</strong> valida el token en cada request usando el middleware <code>JwtBearer</code>, que descarga automáticamente las claves públicas de Firebase (OIDC discovery) y verifica la firma, el emisor y la audiencia.</li>
+  <li>Si el token es válido, el request continúa. Si es inválido o está ausente, el middleware devuelve automáticamente <strong>401 Unauthorized</strong>.</li>
+</ol>
+
+<p>La configuración en <code>Program.cs</code> especifica:</p>
+<ul>
+  <li><strong>Authority:</strong> <code>https://securetoken.google.com/wiser-app-ff1ae</code> (Firebase project ID).</li>
+  <li><strong>Issuer:</strong> mismo valor que Authority.</li>
+  <li><strong>Audience:</strong> <code>wiser-app-ff1ae</code> (Firebase project ID).</li>
+  <li><strong>ValidateLifetime:</strong> <code>true</code> — rechaza tokens expirados.</li>
+</ul>
+
+<h2>8.2 Autorización y rutas protegidas</h2>
+
+<p>Todos los controladores tienen el atributo <code>[Authorize]</code> a nivel de clase, lo que significa que <strong>cualquier endpoint requiere autenticación</strong> por defecto. Solo los endpoints que tienen sentido como públicos están marcados explícitamente con <code>[AllowAnonymous]</code>:</p>
+
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Acceso</th>
+    <th>Justificación</th>
+  </tr>
+  <tr>
+    <td>GET /api/profesor</td>
+    <td><span class="badge badge-warn">Público</span></td>
+    <td>Búsqueda de profesores accesible sin cuenta</td>
+  </tr>
+  <tr>
+    <td>GET /api/profesor/{id}</td>
+    <td><span class="badge badge-warn">Público</span></td>
+    <td>Ver perfil de un profesor sin estar logueado</td>
+  </tr>
+  <tr>
+    <td>GET /api/valoracion/profesor/{id}</td>
+    <td><span class="badge badge-warn">Público</span></td>
+    <td>Ver reseñas sin cuenta</td>
+  </tr>
+  <tr>
+    <td>GET /api/materia</td>
+    <td><span class="badge badge-warn">Público</span></td>
+    <td>Necesario en el formulario de registro</td>
+  </tr>
+  <tr>
+    <td>POST /api/usuario/registro</td>
+    <td><span class="badge badge-warn">Público</span></td>
+    <td>Crear cuenta (primer uso, antes de tener sesión)</td>
+  </tr>
+  <tr>
+    <td>GET /api/usuario/firebase/{uid}</td>
+    <td><span class="badge badge-warn">Público</span></td>
+    <td>Recuperar perfil al iniciar sesión</td>
+  </tr>
+  <tr>
+    <td>Todos los demás endpoints</td>
+    <td><span class="badge badge-ok">Protegido</span></td>
+    <td>Requieren JWT válido de Firebase</td>
+  </tr>
+</table>
+
+<h2>8.3 Buenas prácticas de seguridad</h2>
+
+<ul>
+  <li><strong>Prevención de SQL Injection:</strong> Entity Framework Core parametriza automáticamente todas las queries generadas por LINQ. No se utiliza SQL crudo en ningún punto del backend.</li>
+  <li><strong>CORS:</strong> configurado en <code>Program.cs</code> con la política <em>ReactNative</em>, necesaria para que el cliente móvil pueda comunicarse con la API durante el desarrollo.</li>
+  <li><strong>Swagger con Bearer:</strong> la interfaz de Swagger incluye un campo de autenticación para ingresar el JWT y probar endpoints protegidos directamente desde la UI.</li>
+  <li><strong>Global exception handler:</strong> las excepciones no controladas son capturadas por el middleware global y devueltas como JSON, evitando exponer stack traces al cliente.</li>
+  <li><strong>Brute force:</strong> Firebase gestiona internamente los intentos fallidos de login (bloqueos temporales, CAPTCHA), no requiere implementación en el backend propio.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════
+     9. DOCUMENTACIÓN  (Parte 6)
+═══════════════════════════════════════════════ -->
+<h1 class="salto">9. Documentación</h1>
+<p><em>Corresponde a la Parte 6 de la rúbrica (5 puntos).</em></p>
+
+<h2>9.1 Swagger / OpenAPI</h2>
+
+<p>El backend incluye documentación interactiva de la API mediante <strong>Swagger UI</strong>, disponible en modo Development en la URL <code>http://localhost:5000/swagger</code>. La configuración en <code>Program.cs</code> usa el paquete <code>Swashbuckle.AspNetCore 6.5.0</code> e incluye:</p>
+
+<ul>
+  <li>Listado de todos los endpoints disponibles, agrupados por controlador.</li>
+  <li>Descripción de los parámetros de entrada (query string, path, body).</li>
+  <li>Esquemas de los DTOs con sus tipos y restricciones.</li>
+  <li>Botón <em>"Authorize 🔒"</em> para ingresar el JWT de Firebase y probar los endpoints protegidos directamente desde la interfaz.</li>
+</ul>
+
+<h2>9.2 Repositorio</h2>
+
+<p>El proyecto está versionado en un repositorio <strong>Git</strong> con estructura monorepo:</p>
+<ul>
+  <li><code>/prog3tpi</code> — backend C# .NET 8.</li>
+  <li><code>/wiser-app</code> — frontend React Native / Expo SDK 54.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════
+     10. CONCLUSIÓN
+═══════════════════════════════════════════════ -->
+<h1 class="salto">10. Conclusión</h1>
+
+<p>El backend de Wiser implementa una API REST completa y funcional sobre .NET 8, PostgreSQL y Entity Framework Core 8. Los puntos fuertes del sistema son:</p>
+
+<ul>
+  <li><strong>Modelo de datos rico:</strong> 11 entidades propias con relaciones 1-N, N-N y 1-1, restricciones de integridad y auditoría completa mediante campos de fecha de creación.</li>
+  <li><strong>Endpoints bien definidos:</strong> 7 controladores con más de 20 endpoints que utilizan los verbos HTTP de forma semántica, validaciones en los DTOs y manejo explícito de errores.</li>
+  <li><strong>Seguridad implementada:</strong> autenticación JWT con Firebase validada en el servidor, todos los endpoints sensibles protegidos con <code>[Authorize]</code>, y prevención automática de SQL Injection vía EF Core.</li>
+  <li><strong>Comunicación robusta con el frontend:</strong> la capa <code>apiService.js</code> centraliza todas las llamadas HTTP e incorpora automáticamente el token de autenticación en cada request.</li>
+  <li><strong>Transacciones explícitas:</strong> las operaciones compuestas (crear turno + pago + conversación; registrar usuario + perfil) están protegidas con <code>BeginTransactionAsync</code> / <code>RollbackAsync</code> para garantizar consistencia en la base de datos.</li>
+  <li><strong>Paginación y filtros:</strong> la búsqueda de profesores soporta 5 filtros opcionales con paginación server-side, con respuesta estructurada que incluye metadatos (total, páginas, datos).</li>
+</ul>
+
+<p>Como área de mejora futura se identifica la incorporación de una capa de servicios (Service Layer) que separe la lógica de negocio de los controladores, y la creación de documentación técnica adicional (diagrama de entidades, guía de instalación) que complemente la documentación de API que ya provee Swagger.</p>
+
+<div class="pie">
+  Wiser — TPI Programación III · Backend: C# .NET 8 · Entity Framework Core 8 · PostgreSQL · Firebase Auth · Julio 2026
+</div>
+
+</div><!-- fin .contenido -->
+</body>
+</html>

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TP02.Data;
@@ -5,6 +7,7 @@ using TP02.Models;
 
 namespace TP02.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class AlumnoController : ControllerBase
@@ -60,11 +63,11 @@ namespace TP02.Controllers
     }
 
     public record EditarAlumnoDto(
-        string Nombre,
-        string Apellido,
+        [Required][StringLength(100)] string Nombre,
+        [Required][StringLength(100)] string Apellido,
         string? FotoPerfil,
-        string? ZonaDeseada,
-        decimal? Latitud,
-        decimal? Longitud
+        [StringLength(200)] string? ZonaDeseada,
+        [Range(-90, 90)] decimal? Latitud,
+        [Range(-180, 180)] decimal? Longitud
     );
 }

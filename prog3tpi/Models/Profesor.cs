@@ -14,6 +14,7 @@ namespace TP02.Models
         public decimal? Latitud { get; set; }
         public decimal? Longitud { get; set; }
         public decimal ValoracionPromedio { get; set; } = 0;
+        public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
 
         // Navegación
         public Usuario Usuario { get; set; } = null!;

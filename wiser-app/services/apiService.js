@@ -1,7 +1,19 @@
+import { auth } from './firebase';
 import { BASE_URL } from '../config';
 
+// Wrapper que agrega el JWT de Firebase a cada request
+const authFetch = async (url, options = {}) => {
+  const user = auth.currentUser;
+  const token = user ? await user.getIdToken() : null;
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+  return fetch(url, { ...options, headers });
+};
+
 export const registrarUsuarioEnBD = async (firebaseUid, email, nombre, apellido, rol) => {
-  const response = await fetch(`${BASE_URL}/usuario/registro`, {
+  const response = await authFetch(`${BASE_URL}/usuario/registro`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ firebaseUid, email, nombre, apellido, rol })
@@ -14,7 +26,7 @@ export const registrarUsuarioEnBD = async (firebaseUid, email, nombre, apellido,
 };
 
 export const obtenerUsuarioPorFirebase = async (firebaseUid) => {
-  const response = await fetch(`${BASE_URL}/usuario/firebase/${firebaseUid}`);
+  const response = await authFetch(`${BASE_URL}/usuario/firebase/${firebaseUid}`);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -23,7 +35,7 @@ export const obtenerUsuarioPorFirebase = async (firebaseUid) => {
 };
 
 export const editarCuentaUsuario = async (usuarioId, data) => {
-  const response = await fetch(`${BASE_URL}/usuario/${usuarioId}`, {
+  const response = await authFetch(`${BASE_URL}/usuario/${usuarioId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -36,7 +48,7 @@ export const editarCuentaUsuario = async (usuarioId, data) => {
 };
 
 export const obtenerMaterias = async () => {
-  const response = await fetch(`${BASE_URL}/materia`);
+  const response = await authFetch(`${BASE_URL}/materia`);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -45,7 +57,7 @@ export const obtenerMaterias = async () => {
 };
 
 export const obtenerPerfilProfesor = async (profesorId) => {
-  const response = await fetch(`${BASE_URL}/profesor/${profesorId}`);
+  const response = await authFetch(`${BASE_URL}/profesor/${profesorId}`);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -54,7 +66,7 @@ export const obtenerPerfilProfesor = async (profesorId) => {
 };
 
 export const actualizarPerfilProfesor = async (profesorId, data) => {
-  const response = await fetch(`${BASE_URL}/profesor/${profesorId}`, {
+  const response = await authFetch(`${BASE_URL}/profesor/${profesorId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -67,7 +79,7 @@ export const actualizarPerfilProfesor = async (profesorId, data) => {
 };
 
 export const obtenerTurnosProfesor = async (profesorId) => {
-  const response = await fetch(`${BASE_URL}/turno/profesor/${profesorId}`);
+  const response = await authFetch(`${BASE_URL}/turno/profesor/${profesorId}`);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -76,7 +88,7 @@ export const obtenerTurnosProfesor = async (profesorId) => {
 };
 
 export const actualizarEstadoTurno = async (turnoId, estado) => {
-  const response = await fetch(`${BASE_URL}/turno/${turnoId}/estado`, {
+  const response = await authFetch(`${BASE_URL}/turno/${turnoId}/estado`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ estado })
@@ -89,7 +101,7 @@ export const actualizarEstadoTurno = async (turnoId, estado) => {
 };
 
 export const obtenerChats = async (profesorId) => {
-  const response = await fetch(`${BASE_URL}/chat/profesor/${profesorId}`);
+  const response = await authFetch(`${BASE_URL}/chat/profesor/${profesorId}`);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -101,7 +113,7 @@ export const obtenerMensajes = async (conversacionId, lectorId = null) => {
   const url = lectorId
     ? `${BASE_URL}/chat/${conversacionId}/mensajes?lectorId=${lectorId}`
     : `${BASE_URL}/chat/${conversacionId}/mensajes`;
-  const response = await fetch(url);
+  const response = await authFetch(url);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -110,7 +122,7 @@ export const obtenerMensajes = async (conversacionId, lectorId = null) => {
 };
 
 export const enviarMensaje = async (conversacionId, remitenteId, contenido) => {
-  const response = await fetch(`${BASE_URL}/chat/mensaje`, {
+  const response = await authFetch(`${BASE_URL}/chat/mensaje`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ conversacionId, remitenteId, contenido })
@@ -125,13 +137,13 @@ export const enviarMensaje = async (conversacionId, remitenteId, contenido) => {
 // ── Alumno ────────────────────────────────────────────────────────────────
 
 export const obtenerPerfilAlumno = async (alumnoId) => {
-  const response = await fetch(`${BASE_URL}/alumno/${alumnoId}`);
+  const response = await authFetch(`${BASE_URL}/alumno/${alumnoId}`);
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
 
 export const editarPerfilAlumno = async (alumnoId, data) => {
-  const response = await fetch(`${BASE_URL}/alumno/${alumnoId}`, {
+  const response = await authFetch(`${BASE_URL}/alumno/${alumnoId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -141,13 +153,13 @@ export const editarPerfilAlumno = async (alumnoId, data) => {
 };
 
 export const obtenerTurnosAlumno = async (alumnoId) => {
-  const response = await fetch(`${BASE_URL}/turno/alumno/${alumnoId}`);
+  const response = await authFetch(`${BASE_URL}/turno/alumno/${alumnoId}`);
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
 
 export const obtenerChatsAlumno = async (alumnoId) => {
-  const response = await fetch(`${BASE_URL}/chat/alumno/${alumnoId}`);
+  const response = await authFetch(`${BASE_URL}/chat/alumno/${alumnoId}`);
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
@@ -159,20 +171,20 @@ export const buscarProfesores = async (params = {}) => {
     Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''))
   ).toString();
   const url = `${BASE_URL}/profesor${query ? `?${query}` : ''}`;
-  const response = await fetch(url);
+  const response = await authFetch(url);
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
 
 export const obtenerDatosBancariosProfesor = async (profesorId) => {
-  const response = await fetch(`${BASE_URL}/profesor/${profesorId}/datosbancarios`);
+  const response = await authFetch(`${BASE_URL}/profesor/${profesorId}/datosbancarios`);
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
 
 export const guardarDatosBancarios = async (profesorId, datos) => {
-  const response = await fetch(`${BASE_URL}/profesor/${profesorId}/datosbancarios`, {
+  const response = await authFetch(`${BASE_URL}/profesor/${profesorId}/datosbancarios`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(datos)
@@ -182,7 +194,7 @@ export const guardarDatosBancarios = async (profesorId, datos) => {
 };
 
 export const obtenerValoracionesProfesor = async (profesorId) => {
-  const response = await fetch(`${BASE_URL}/valoracion/profesor/${profesorId}`);
+  const response = await authFetch(`${BASE_URL}/valoracion/profesor/${profesorId}`);
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
@@ -190,13 +202,13 @@ export const obtenerValoracionesProfesor = async (profesorId) => {
 // ── Turno / Agendamiento ──────────────────────────────────────────────────
 
 export const obtenerDisponiblesProfesor = async (profesorId) => {
-  const response = await fetch(`${BASE_URL}/turno/disponibles/${profesorId}`);
+  const response = await authFetch(`${BASE_URL}/turno/disponibles/${profesorId}`);
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };
 
 export const crearTurno = async (data) => {
-  const response = await fetch(`${BASE_URL}/turno`, {
+  const response = await authFetch(`${BASE_URL}/turno`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -206,7 +218,7 @@ export const crearTurno = async (data) => {
 };
 
 export const subirComprobante = async (turnoId, comprobanteUrl) => {
-  const response = await fetch(`${BASE_URL}/turno/${turnoId}/comprobante`, {
+  const response = await authFetch(`${BASE_URL}/turno/${turnoId}/comprobante`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ comprobanteUrl })
@@ -216,7 +228,7 @@ export const subirComprobante = async (turnoId, comprobanteUrl) => {
 };
 
 export const cancelarTurno = async (turnoId, motivo) => {
-  const response = await fetch(`${BASE_URL}/turno/${turnoId}/cancelar`, {
+  const response = await authFetch(`${BASE_URL}/turno/${turnoId}/cancelar`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ motivo: motivo || null })
@@ -226,7 +238,7 @@ export const cancelarTurno = async (turnoId, motivo) => {
 };
 
 export const crearValoracion = async (data) => {
-  const response = await fetch(`${BASE_URL}/valoracion`, {
+  const response = await authFetch(`${BASE_URL}/valoracion`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)

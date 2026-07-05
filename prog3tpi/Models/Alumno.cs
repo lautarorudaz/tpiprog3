@@ -7,7 +7,8 @@ namespace TP02.Models
         public string? ZonaDeseada { get; set; }
         public decimal? Latitud { get; set; }
         public decimal? Longitud { get; set; }
- 
+        public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
+
         // Navegación
         public Usuario Usuario { get; set; } = null!;
         public ICollection<Turno> Turnos { get; set; } = new List<Turno>();

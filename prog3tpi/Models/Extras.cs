@@ -13,6 +13,7 @@ namespace TP02.Models
         public int ProfesorId { get; set; }
         public DiaSemana DiaSemana { get; set; }
         public TurnoTipo Turno { get; set; }
+        public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
 
         public Profesor Profesor { get; set; } = null!;
     }
@@ -46,6 +47,7 @@ namespace TP02.Models
         public string? Alias { get; set; }
         public string Titular { get; set; } = string.Empty;
         public string? Banco { get; set; }
+        public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
 
         public Profesor Profesor { get; set; } = null!;
     }

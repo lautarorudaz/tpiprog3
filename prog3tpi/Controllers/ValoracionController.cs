@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TP02.Data;
@@ -5,6 +7,7 @@ using TP02.Models;
 
 namespace TP02.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ValoracionController : ControllerBase
@@ -13,6 +16,7 @@ namespace TP02.Controllers
         public ValoracionController(AppDbContext db) => _db = db;
 
         // GET api/valoracion/profesor/{profesorId}
+        [AllowAnonymous]
         [HttpGet("profesor/{profesorId}")]
         public async Task<IActionResult> ObtenerPorProfesor(int profesorId)
         {
@@ -78,10 +82,10 @@ namespace TP02.Controllers
     }
 
     public record CrearValoracionDto(
-        int TurnoId,
-        int AlumnoId,
-        int ProfesorId,
-        int Puntaje,
-        string? Comentario
+        [Required] int TurnoId,
+        [Required] int AlumnoId,
+        [Required] int ProfesorId,
+        [Required][Range(1, 5)] int Puntaje,
+        [StringLength(500)] string? Comentario
     );
 }

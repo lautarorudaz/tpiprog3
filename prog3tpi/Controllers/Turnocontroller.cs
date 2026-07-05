@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TP02.Data;
@@ -5,6 +7,7 @@ using TP02.Models;
 
 namespace TP02.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class TurnoController : ControllerBase
@@ -56,34 +59,44 @@ namespace TP02.Controllers
                 Estado        = EstadoTurno.pendiente_pago
             };
 
-            _db.Turnos.Add(turno);
-            await _db.SaveChangesAsync();
-
-            // Crear el pago asociado
-            _db.Pagos.Add(new Pago
+            using var tx = await _db.Database.BeginTransactionAsync();
+            try
             {
-                TurnoId = turno.Id,
-                Metodo  = dto.MetodoPago,
-                Estado  = EstadoPago.pendiente
-            });
+                _db.Turnos.Add(turno);
+                await _db.SaveChangesAsync();
 
-            // Crear conversacion alumno-profesor si no existe
-            var convExistente = await _db.Conversaciones
-                .FirstOrDefaultAsync(c => c.AlumnoId == dto.AlumnoId && c.ProfesorId == dto.ProfesorId);
-
-            if (convExistente == null)
-            {
-                _db.Conversaciones.Add(new Conversacion
+                // Crear el pago asociado
+                _db.Pagos.Add(new Pago
                 {
-                    AlumnoId   = dto.AlumnoId,
-                    ProfesorId = dto.ProfesorId,
-                    TurnoId    = turno.Id
+                    TurnoId = turno.Id,
+                    Metodo  = dto.MetodoPago,
+                    Estado  = EstadoPago.pendiente
                 });
+
+                // Crear conversacion alumno-profesor si no existe
+                var convExistente = await _db.Conversaciones
+                    .FirstOrDefaultAsync(c => c.AlumnoId == dto.AlumnoId && c.ProfesorId == dto.ProfesorId);
+
+                if (convExistente == null)
+                {
+                    _db.Conversaciones.Add(new Conversacion
+                    {
+                        AlumnoId   = dto.AlumnoId,
+                        ProfesorId = dto.ProfesorId,
+                        TurnoId    = turno.Id
+                    });
+                }
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                return Ok(new { turno.Id, turno.Estado, mensaje = "Turno creado. Pendiente de pago." });
             }
-
-            await _db.SaveChangesAsync();
-
-            return Ok(new { turno.Id, turno.Estado, mensaje = "Turno creado. Pendiente de pago." });
+            catch
+            {
+                await tx.RollbackAsync();
+                return StatusCode(500, "Error al crear el turno.");
+            }
         }
 
         // GET api/turno/alumno/{alumnoId}
@@ -197,16 +210,16 @@ namespace TP02.Controllers
 
     // ── DTOs ────────────────────────────────────────────────
     public record CrearTurnoDto(
-        int ProfesorId,
-        int AlumnoId,
-        int MateriaId,
-        DateOnly Fecha,
+        [Required] int ProfesorId,
+        [Required] int AlumnoId,
+        [Required] int MateriaId,
+        [Required] DateOnly Fecha,
         TurnoTipo TurnoHorario,
         ModalidadTipo Modalidad,
         MetodoPago MetodoPago
     );
 
     public record CambiarEstadoDto(EstadoTurno Estado);
-    public record CancelarTurnoDto(string? Motivo);
-    public record ComprobanteDto(string ComprobanteUrl);
+    public record CancelarTurnoDto([StringLength(500)] string? Motivo);
+    public record ComprobanteDto([Required] string ComprobanteUrl);
 }

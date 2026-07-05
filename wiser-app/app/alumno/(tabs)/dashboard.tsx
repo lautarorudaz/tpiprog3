@@ -98,6 +98,10 @@ export default function AlumnoDashboard() {
   const [searchText, setSearchText] = useState('');
   const [materiaSeleccionada, setMateriaSeleccionada] = useState<string | null>(null);
 
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalProfesores, setTotalProfesores] = useState(0);
+  const [hayMas, setHayMas] = useState(false);
+
   const [selectedProf, setSelectedProf] = useState<any>(null);
   const mapRef = useRef<MapView>(null);
   const markerPressed = useRef(false);
@@ -123,15 +127,24 @@ export default function AlumnoDashboard() {
     init();
   }, []);
 
-  const handleBuscar = useCallback(async () => {
+  const handleBuscar = useCallback(async (pagina = 1) => {
     setLoadingProfesores(true);
     try {
       const materiaEncontrada = materiasObj.find((m: any) => m.nombre === materiaSeleccionada);
-      const profs = await buscarProfesores({
+      const resultado = await buscarProfesores({
         nombre: searchText.trim() || undefined,
         materiaId: materiaEncontrada?.id || undefined,
+        page: pagina,
+        pageSize: 10,
       });
-      setProfesores(profs);
+      if (pagina === 1) {
+        setProfesores(resultado.datos);
+      } else {
+        setProfesores(prev => [...prev, ...resultado.datos]);
+      }
+      setTotalProfesores(resultado.total);
+      setHayMas(pagina < resultado.totalPaginas);
+      setPaginaActual(pagina);
     } catch {
       Alert.alert('Error', 'No se pudieron cargar los profesores.');
     } finally {
@@ -145,7 +158,7 @@ export default function AlumnoDashboard() {
   useEffect(() => { handleBuscarRef.current = handleBuscar; }, [handleBuscar]);
 
   useEffect(() => {
-    const timer = setTimeout(() => handleBuscarRef.current(), 400);
+    const timer = setTimeout(() => handleBuscarRef.current(1), 400);
     return () => clearTimeout(timer);
   }, [searchText, materiaSeleccionada]);
 
@@ -212,10 +225,29 @@ export default function AlumnoDashboard() {
           data={profesores}
           keyExtractor={item => String(item.id)}
           contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            totalProfesores > 0
+              ? <Text style={styles.totalText}>{profesores.length} de {totalProfesores} profesores</Text>
+              : null
+          }
           ListEmptyComponent={
             loadingProfesores
               ? <ActivityIndicator color={Colors.cian} style={{ marginTop: 20 }} />
               : <Text style={styles.vacioText}>No se encontraron profesores.</Text>
+          }
+          ListFooterComponent={
+            hayMas ? (
+              <TouchableOpacity
+                style={styles.btnVerMas}
+                onPress={() => handleBuscarRef.current(paginaActual + 1)}
+                disabled={loadingProfesores}
+              >
+                {loadingProfesores
+                  ? <ActivityIndicator color={Colors.cian} size="small" />
+                  : <Text style={styles.btnVerMasText}>Ver más resultados</Text>
+                }
+              </TouchableOpacity>
+            ) : null
           }
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -460,6 +492,26 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(13),
     textAlign: 'center',
     marginTop: verticalScale(20),
+  },
+  totalText: {
+    fontFamily: Fonts.rubikRegular,
+    color: '#8b93b8',
+    fontSize: moderateScale(11),
+    marginBottom: verticalScale(10),
+  },
+  btnVerMas: {
+    borderWidth: 1,
+    borderColor: Colors.cian,
+    borderRadius: 8,
+    paddingVertical: scale(12),
+    alignItems: 'center',
+    marginTop: verticalScale(8),
+    marginBottom: verticalScale(16),
+  },
+  btnVerMasText: {
+    fontFamily: Fonts.spaceGroteskBold,
+    color: Colors.cian,
+    fontSize: moderateScale(12),
   },
   profesorCard: {
     flexDirection: 'row',

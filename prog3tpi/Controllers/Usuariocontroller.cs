@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TP02.Data;
@@ -5,6 +7,7 @@ using TP02.Models;
 
 namespace TP02.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UsuarioController : ControllerBase
@@ -12,6 +15,7 @@ namespace TP02.Controllers
         private readonly AppDbContext _db;
         public UsuarioController(AppDbContext db) => _db = db;
 
+        [AllowAnonymous]
         [HttpPost("registro")]
         public async Task<IActionResult> Registro([FromBody] RegistroDto dto)
         {
@@ -42,19 +46,30 @@ namespace TP02.Controllers
                 Rol         = dto.Rol
             };
 
-            _db.Usuarios.Add(usuario);
-            await _db.SaveChangesAsync();
+            using var tx = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                _db.Usuarios.Add(usuario);
+                await _db.SaveChangesAsync();
 
-            if (dto.Rol == RolUsuario.alumno)
-                _db.Alumnos.Add(new Alumno { UsuarioId = usuario.Id });
-            else
-                _db.Profesores.Add(new Profesor { UsuarioId = usuario.Id, Modalidad = ModalidadTipo.presencial, PrecioHora = 0 });
+                if (dto.Rol == RolUsuario.alumno)
+                    _db.Alumnos.Add(new Alumno { UsuarioId = usuario.Id });
+                else
+                    _db.Profesores.Add(new Profesor { UsuarioId = usuario.Id, Modalidad = ModalidadTipo.presencial, PrecioHora = 0 });
 
-            await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
 
-            return Ok(new { usuario.Id, usuario.Rol });
+                return Ok(new { usuario.Id, usuario.Rol });
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                return StatusCode(500, "Error al registrar el usuario.");
+            }
         }
 
+        [AllowAnonymous]
         [HttpGet("firebase/{firebaseUid}")]
         public async Task<IActionResult> ObtenerPorFirebase(string firebaseUid)
         {
@@ -85,6 +100,16 @@ namespace TP02.Controllers
         }
     }
 
-    public record RegistroDto(string FirebaseUid, string Email, string? Nombre, string? Apellido, RolUsuario Rol);
-    public record EditarCuentaDto(string Nombre, string Apellido, string? FotoPerfil);
+    public record RegistroDto(
+        [Required] string FirebaseUid,
+        [Required][EmailAddress] string Email,
+        [StringLength(100)] string? Nombre,
+        [StringLength(100)] string? Apellido,
+        RolUsuario Rol
+    );
+    public record EditarCuentaDto(
+        [Required][StringLength(100)] string Nombre,
+        [Required][StringLength(100)] string Apellido,
+        string? FotoPerfil
+    );
 }

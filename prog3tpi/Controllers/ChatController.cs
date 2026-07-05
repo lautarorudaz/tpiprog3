@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TP02.Data;
@@ -5,6 +7,7 @@ using TP02.Models;
 
 namespace TP02.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ChatController : ControllerBase
@@ -147,5 +150,9 @@ namespace TP02.Controllers
 
     }
 
-    public record EnviarMensajeDto(int ConversacionId, int RemitenteId, string Contenido);
+    public record EnviarMensajeDto(
+        [Required] int ConversacionId,
+        [Required] int RemitenteId,
+        [Required][StringLength(2000)] string Contenido
+    );
 }

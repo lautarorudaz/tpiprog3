@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TP02.Data;
@@ -5,6 +7,7 @@ using TP02.Models;
 
 namespace TP02.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProfesorController : ControllerBase
@@ -13,15 +16,21 @@ namespace TP02.Controllers
         public ProfesorController(AppDbContext db) => _db = db;
 
         // GET api/profesor
-        // Buscar profesores con filtros opcionales
+        // Buscar profesores con filtros opcionales y paginación
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Buscar(
             [FromQuery] string? nombre,
             [FromQuery] int? materiaId,
             [FromQuery] string? zona,
             [FromQuery] decimal? precioMaximo,
-            [FromQuery] ModalidadTipo? modalidad)
+            [FromQuery] ModalidadTipo? modalidad,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
             var query = _db.Profesores
                 .Include(p => p.Usuario)
                 .Include(p => p.Materias)
@@ -45,28 +54,37 @@ namespace TP02.Controllers
             if (modalidad.HasValue)
                 query = query.Where(p => p.Modalidad == modalidad);
 
-            var resultado = await query.Select(p => new
-            {
-                p.Id,
-                p.Usuario.Nombre,
-                p.Usuario.Apellido,
-                p.Usuario.FotoPerfil,
-                p.Titulo,
-                p.Descripcion,
-                p.Modalidad,
-                p.PrecioHora,
-                p.Zona,
-                p.Latitud,
-                p.Longitud,
-                p.ValoracionPromedio,
-                Materias = p.Materias.Select(m => new { m.Id, m.Nombre, m.Nivel })
-            }).ToListAsync();
+            var total = await query.CountAsync();
+            var totalPaginas = (int)Math.Ceiling(total / (double)pageSize);
 
-            return Ok(resultado);
+            var datos = await query
+                .OrderByDescending(p => p.ValoracionPromedio)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Usuario.Nombre,
+                    p.Usuario.Apellido,
+                    p.Usuario.FotoPerfil,
+                    p.Titulo,
+                    p.Descripcion,
+                    p.Modalidad,
+                    p.PrecioHora,
+                    p.Zona,
+                    p.Latitud,
+                    p.Longitud,
+                    p.ValoracionPromedio,
+                    Materias = p.Materias.Select(m => new { m.Id, m.Nombre, m.Nivel })
+                })
+                .ToListAsync();
+
+            return Ok(new { total, page, pageSize, totalPaginas, datos });
         }
 
         // GET api/profesor/{id}
         // Perfil completo de un profesor
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
@@ -180,19 +198,24 @@ namespace TP02.Controllers
     public record DisponibilidadDto(DiaSemana DiaSemana, TurnoTipo Turno);
 
     public record EditarProfesorDto(
-        string Nombre,
-        string Apellido,
+        [Required][StringLength(100)] string Nombre,
+        [Required][StringLength(100)] string Apellido,
         string? FotoPerfil,
-        string? Titulo,
-        string? Descripcion,
+        [StringLength(200)] string? Titulo,
+        [StringLength(1000)] string? Descripcion,
         ModalidadTipo Modalidad,
-        decimal PrecioHora,
-        string? Zona,
-        decimal? Latitud,
-        decimal? Longitud,
-        List<int> MateriaIds,
-        List<DisponibilidadDto> Disponibilidades
+        [Range(0, 1000000)] decimal PrecioHora,
+        [StringLength(200)] string? Zona,
+        [Range(-90, 90)] decimal? Latitud,
+        [Range(-180, 180)] decimal? Longitud,
+        [Required] List<int> MateriaIds,
+        [Required] List<DisponibilidadDto> Disponibilidades
     );
 
-    public record DatosBancariosDto(string? Cbu, string? Alias, string? Banco, string? Titular);
+    public record DatosBancariosDto(
+        [StringLength(22)] string? Cbu,
+        [StringLength(50)] string? Alias,
+        [StringLength(100)] string? Banco,
+        [StringLength(100)] string? Titular
+    );
 }
