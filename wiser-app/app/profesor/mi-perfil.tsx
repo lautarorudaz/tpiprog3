@@ -10,6 +10,7 @@ import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { obtenerMaterias, obtenerPerfilProfesor, actualizarPerfilProfesor } from '../../services/apiService';
 import { useProfesor } from '../../hooks/use-profesor';
+import * as Location from 'expo-location';
 
 type Materia = { id: number; nombre: string; nivel: string };
 
@@ -22,6 +23,7 @@ export default function MiPerfil() {
 
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [zona, setZona] = useState('');
   const [modalidad, setModalidad] = useState<'presencial' | 'Virtual' | 'hibrida'>('presencial');
   const [precioHora, setPrecioHora] = useState('');
   const [materiasSeleccionadas, setMateriasSeleccionadas] = useState<Materia[]>([]);
@@ -40,6 +42,7 @@ export default function MiPerfil() {
         ]);
         setTitulo(perfil.titulo || '');
         setDescripcion(perfil.descripcion || '');
+        setZona(perfil.zona || '');
         setModalidad(perfil.modalidad || 'presencial');
         setPrecioHora(perfil.precioHora ? String(perfil.precioHora) : '');
         setMateriasSeleccionadas(perfil.materias || []);
@@ -75,6 +78,19 @@ export default function MiPerfil() {
       const perfilActual = await obtenerPerfilProfesor(profesorId);
       const cleanPrice = precioHora.replace(/[^0-9]/g, '');
 
+      // Geocodificar si la zona cambió
+      let latitud = perfilActual.latitud ?? null;
+      let longitud = perfilActual.longitud ?? null;
+      if (zona.trim() && zona.trim() !== (perfilActual.zona ?? '')) {
+        try {
+          const results = await Location.geocodeAsync(zona.trim());
+          if (results.length > 0) {
+            latitud = results[0].latitude;
+            longitud = results[0].longitude;
+          }
+        } catch {}
+      }
+
       await actualizarPerfilProfesor(profesorId, {
         nombre: perfilActual.nombre,
         apellido: perfilActual.apellido,
@@ -83,9 +99,9 @@ export default function MiPerfil() {
         descripcion,
         modalidad,
         precioHora: parseFloat(cleanPrice) || 0,
-        zona: perfilActual.zona,
-        latitud: perfilActual.latitud,
-        longitud: perfilActual.longitud,
+        zona: zona.trim() || perfilActual.zona,
+        latitud,
+        longitud,
         materiaIds: materiasSeleccionadas.map(m => m.id),
         disponibilidades: disponibilidadesActuales,
       });
@@ -126,6 +142,15 @@ export default function MiPerfil() {
         placeholderTextColor="#aaa"
         value={titulo}
         onChangeText={setTitulo}
+      />
+
+      <Text style={styles.label}>Lugar de dictado:</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ej: Resistencia, Chaco"
+        placeholderTextColor="#aaa"
+        value={zona}
+        onChangeText={setZona}
       />
 
       <Text style={styles.label}>Sobre mí:</Text>

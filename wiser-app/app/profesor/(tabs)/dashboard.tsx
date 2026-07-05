@@ -160,7 +160,7 @@ export default function ProfesorDashboard() {
                 <View style={styles.solicitudLeft}>
                   <Text style={styles.solicitudMateria}>{sol.materia}</Text>
                   <Text style={styles.solicitudFecha}>
-                    Fecha: {sol.fecha} - Hora: {sol.turnoHorario === 'manana' ? '09:00' : sol.turnoHorario === 'tarde' ? '14:00' : '19:00'}
+                    Fecha: {sol.fecha} — Turno: {sol.turnoHorario === 'manana' ? '9-12hs' : sol.turnoHorario === 'tarde' ? '13-17hs' : '18-22hs'}
                   </Text>
                   <Text style={styles.solicitudAlumno}>{sol.alumno}</Text>
                   <TouchableOpacity
@@ -213,7 +213,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     fontSize: moderateScale(36),
     color: '#3455ff',
-    fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: verticalScale(16),
   },
@@ -236,7 +235,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     color: Colors.blanco,
     fontSize: moderateScale(16),
-    fontWeight: 'bold',
   },
   avatarBorder: {
     width: scale(36),
@@ -312,7 +310,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     color: Colors.blanco,
     fontSize: moderateScale(18),
-    fontWeight: 'bold',
   },
   solicitudesContainer: {
     width: '100%',
@@ -341,7 +338,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     color: Colors.blanco,
     fontSize: moderateScale(14),
-    fontWeight: 'bold',
     marginBottom: 4,
   },
   solicitudFecha: {
@@ -358,7 +354,7 @@ const styles = StyleSheet.create({
   },
   btnVerPerfil: {
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: Colors.cian,
     borderRadius: 4,
     paddingVertical: 4,
     paddingHorizontal: 8,
@@ -366,9 +362,8 @@ const styles = StyleSheet.create({
   },
   btnVerPerfilText: {
     fontFamily: Fonts.spaceGroteskBold,
-    color: '#aaa',
+    color: Colors.cian,
     fontSize: moderateScale(9),
-    fontWeight: 'bold',
   },
   solicitudActions: {
     justifyContent: 'center',

@@ -61,7 +61,7 @@ const markerStyles = StyleSheet.create({
     overflow: 'hidden', justifyContent: 'center', alignItems: 'center',
   },
   bubbleImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  initials: { fontFamily: 'SpaceGrotesk-Bold', color: '#0d1232', fontSize: 13, fontWeight: 'bold' },
+  initials: { fontFamily: Fonts.spaceGroteskBold, color: '#0d1232', fontSize: 13 },
   arrow: {
     width: 0, height: 0,
     borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
@@ -91,7 +91,8 @@ export default function AlumnoDashboard() {
   const { nombre, usuario, loading: loadingUsuario } = useAlumno();
 
   const [profesores, setProfesores] = useState<any[]>([]);
-  const [materias, setMaterias] = useState<string[]>([]);
+  const [materiasObj, setMateriasObj] = useState<any[]>([]); // objetos completos { id, nombre, nivel }
+  const [materias, setMaterias] = useState<string[]>([]);    // nombres únicos para los chips de filtro
   const [loadingProfesores, setLoadingProfesores] = useState(false);
 
   const [searchText, setSearchText] = useState('');
@@ -99,6 +100,7 @@ export default function AlumnoDashboard() {
 
   const [selectedProf, setSelectedProf] = useState<any>(null);
   const mapRef = useRef<MapView>(null);
+  const markerPressed = useRef(false);
 
   const alumnoLatitud = usuario?.alumno?.latitud ? Number(usuario.alumno.latitud) : null;
   const alumnoLongitud = usuario?.alumno?.longitud ? Number(usuario.alumno.longitud) : null;
@@ -106,16 +108,14 @@ export default function AlumnoDashboard() {
     ? { latitude: alumnoLatitud, longitude: alumnoLongitud }
     : null;
 
-  // Load materias and initial professors list
+  // Load materias only (professors fetched by debounce on mount)
   useEffect(() => {
     const init = async () => {
       try {
         const mats = await obtenerMaterias();
+        setMateriasObj(mats);
         const uniqueNombres = Array.from(new Set<string>(mats.map((m: any) => m.nombre)));
         setMaterias(uniqueNombres);
-
-        const profs = await buscarProfesores({});
-        setProfesores(profs);
       } catch (err) {
         console.error(err);
       }
@@ -126,8 +126,7 @@ export default function AlumnoDashboard() {
   const handleBuscar = useCallback(async () => {
     setLoadingProfesores(true);
     try {
-      const mats = await obtenerMaterias();
-      const materiaEncontrada = mats.find((m: any) => m.nombre === materiaSeleccionada);
+      const materiaEncontrada = materiasObj.find((m: any) => m.nombre === materiaSeleccionada);
       const profs = await buscarProfesores({
         nombre: searchText.trim() || undefined,
         materiaId: materiaEncontrada?.id || undefined,
@@ -138,12 +137,17 @@ export default function AlumnoDashboard() {
     } finally {
       setLoadingProfesores(false);
     }
-  }, [searchText, materiaSeleccionada]);
+  }, [searchText, materiaSeleccionada, materiasObj]);
+
+  // Keep a stable ref so the debounce always calls the latest handleBuscar
+  // without re-firing when handleBuscar is recreated due to materiasObj update
+  const handleBuscarRef = useRef(handleBuscar);
+  useEffect(() => { handleBuscarRef.current = handleBuscar; }, [handleBuscar]);
 
   useEffect(() => {
-    const timer = setTimeout(handleBuscar, 400);
+    const timer = setTimeout(() => handleBuscarRef.current(), 400);
     return () => clearTimeout(timer);
-  }, [searchText, materiaSeleccionada, handleBuscar]);
+  }, [searchText, materiaSeleccionada]);
 
   const hayFiltro = searchText.trim().length > 0 || materiaSeleccionada !== null;
 
@@ -257,13 +261,16 @@ export default function AlumnoDashboard() {
                 latitudeDelta: 0.08,
                 longitudeDelta: 0.08,
               }}
-              onPress={() => setSelectedProf(null)}
+              onPress={() => {
+                if (markerPressed.current) { markerPressed.current = false; return; }
+                setSelectedProf(null);
+              }}
             >
               {profesoresConUbicacion.map(prof => (
                 <ProfMarker
                   key={prof.id}
                   prof={prof}
-                  onSelect={setSelectedProf}
+                  onSelect={(p) => { markerPressed.current = true; setSelectedProf(p); }}
                 />
               ))}
             </MapView>
@@ -404,7 +411,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(12),
     paddingVertical: scale(10),
     borderWidth: 1,
-    borderColor: '#1e295d',
+    borderColor: '#2a3570',
     marginBottom: verticalScale(18),
   },
   searchInput: {
@@ -567,7 +574,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     color: '#0d1232',
     fontSize: moderateScale(13),
-    fontWeight: 'bold',
   },
   miniCardNombre: {
     fontFamily: Fonts.spaceGroteskBold,

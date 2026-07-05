@@ -32,12 +32,18 @@ export default function ProfesorDetalleTurno() {
   const router = useRouter();
   const {
     turnoId, materia, fecha, turnoHorario, modalidad,
-    alumnoNombre, alumnoId, alumnoFoto,
+    alumnoNombre, alumnoId,
+    pagoMetodo, pagoComprobanteUrl,
   } = useLocalSearchParams<{
     turnoId: string; materia: string; fecha: string;
     turnoHorario: string; modalidad: string;
-    alumnoNombre: string; alumnoId: string; alumnoFoto?: string;
+    alumnoNombre: string; alumnoId: string;
+    pagoMetodo?: string; pagoComprobanteUrl?: string;
   }>();
+
+  const alumnoInitials = alumnoNombre
+    ? alumnoNombre.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
+    : '?';
 
   const [modalCancelar, setModalCancelar] = useState(false);
   const [motivo, setMotivo] = useState('');
@@ -90,17 +96,22 @@ export default function ProfesorDetalleTurno() {
           <Text style={styles.dataLabel}>Modalidad</Text>
           <Text style={styles.dataValue}>{modalidad ? labelModalidad(modalidad) : '—'}</Text>
         </View>
+        {pagoMetodo ? (
+          <>
+            <View style={styles.separator} />
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Método de pago</Text>
+              <Text style={styles.dataValue}>{pagoMetodo === 'transferencia' ? 'Transferencia' : 'Efectivo'}</Text>
+            </View>
+          </>
+        ) : null}
       </View>
 
       {/* Alumno */}
       <Text style={styles.sectionTitle}>ALUMNO</Text>
       <View style={styles.alumnoCard}>
         <View style={styles.alumnoAvatar}>
-          {alumnoFoto ? (
-            <Image source={{ uri: alumnoFoto }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-          ) : (
-            <Ionicons name="person-outline" size={scale(22)} color="#aaa" />
-          )}
+          <Text style={styles.alumnoInitials}>{alumnoInitials}</Text>
         </View>
         <Text style={styles.alumnoNombre}>{alumnoNombre}</Text>
         {alumnoId ? (
@@ -113,6 +124,30 @@ export default function ProfesorDetalleTurno() {
           </TouchableOpacity>
         ) : null}
       </View>
+
+      {/* Comprobante de pago */}
+      {pagoMetodo === 'transferencia' && (
+        <View>
+          <Text style={styles.sectionTitle}>COMPROBANTE DE PAGO</Text>
+          {pagoComprobanteUrl ? (
+            <View style={styles.comprobanteCard}>
+              <Image
+                source={{ uri: pagoComprobanteUrl }}
+                style={styles.comprobanteImg}
+                resizeMode="contain"
+              />
+              <Text style={styles.comprobanteLegend}>Comprobante adjunto por el alumno</Text>
+            </View>
+          ) : (
+            <View style={styles.comprobantePendienteCard}>
+              <Ionicons name="document-outline" size={scale(28)} color="#8b93b8" />
+              <Text style={styles.comprobantePendienteText}>
+                El alumno aún no subió el comprobante de transferencia.
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Cancelar */}
       <TouchableOpacity style={styles.btnCancelar} onPress={() => setModalCancelar(true)}>
@@ -176,12 +211,39 @@ const styles = StyleSheet.create({
   },
   alumnoAvatar: {
     width: scale(40), height: scale(40), borderRadius: scale(20),
-    backgroundColor: Colors.superficieB, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Colors.cian, justifyContent: 'center', alignItems: 'center',
     overflow: 'hidden',
+  },
+  alumnoInitials: {
+    fontFamily: Fonts.spaceGroteskBold, color: Colors.background,
+    fontSize: moderateScale(14),
   },
   alumnoNombre: { fontFamily: Fonts.rubikMedium, color: Colors.blanco, fontSize: moderateScale(14), flex: 1 },
   btnVerPerfil: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   btnVerPerfilText: { fontFamily: Fonts.spaceGroteskBold, color: Colors.cian, fontSize: moderateScale(11) },
+  comprobanteCard: {
+    backgroundColor: Colors.superficieA, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.cian, overflow: 'hidden',
+    marginTop: verticalScale(6),
+  },
+  comprobanteImg: {
+    width: '100%', height: verticalScale(220),
+  },
+  comprobanteLegend: {
+    fontFamily: Fonts.rubikRegular, color: '#8b93b8',
+    fontSize: moderateScale(11), textAlign: 'center',
+    paddingVertical: scale(8),
+  },
+  comprobantePendienteCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.superficieA, borderRadius: 10,
+    borderWidth: 1, borderColor: '#1e295d', padding: scale(16),
+    marginTop: verticalScale(6),
+  },
+  comprobantePendienteText: {
+    flex: 1, fontFamily: Fonts.rubikRegular, color: '#8b93b8',
+    fontSize: moderateScale(12), lineHeight: moderateScale(18),
+  },
   btnCancelar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Colors.error, borderRadius: 10, paddingVertical: scale(16),

@@ -11,7 +11,8 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import {
-  editarCuentaUsuario, obtenerPerfilProfesor, actualizarPerfilProfesor, obtenerTurnosProfesor
+  editarCuentaUsuario, obtenerPerfilProfesor, actualizarPerfilProfesor,
+  obtenerTurnosProfesor, obtenerDatosBancariosProfesor, guardarDatosBancarios
 } from '../../services/apiService';
 import { useProfesor } from '../../hooks/use-profesor';
 import { auth } from '../../services/firebase';
@@ -37,6 +38,13 @@ export default function AjustesCuenta() {
   const [passwordRepetir, setPasswordRepetir] = useState('');
   const [cambiandoPassword, setCambiandoPassword] = useState(false);
 
+  // Datos bancarios
+  const [cbu, setCbu] = useState('');
+  const [alias, setAlias] = useState('');
+  const [banco, setBanco] = useState('');
+  const [titular, setTitular] = useState('');
+  const [guardandoBancarios, setGuardandoBancarios] = useState(false);
+
   // Horarios
   const [perfil, setPerfil] = useState<any>(null);
   const [disponibilidad, setDisponibilidad] = useState<DisponibilidadValue>(crearDisponibilidadVacia());
@@ -55,10 +63,17 @@ export default function AjustesCuenta() {
     const init = async () => {
       if (!profesorId) return;
       try {
-        const [perfilData, turnos] = await Promise.all([
+        const [perfilData, turnos, datosBanc] = await Promise.all([
           obtenerPerfilProfesor(profesorId),
           obtenerTurnosProfesor(profesorId),
+          obtenerDatosBancariosProfesor(profesorId),
         ]);
+        if (datosBanc) {
+          setCbu(datosBanc.cbu || '');
+          setAlias(datosBanc.alias || '');
+          setBanco(datosBanc.banco || '');
+          setTitular(datosBanc.titular || '');
+        }
         setPerfil(perfilData);
 
         const disp = crearDisponibilidadVacia();
@@ -84,6 +99,23 @@ export default function AjustesCuenta() {
     };
     init();
   }, [profesorId]);
+
+  const handleGuardarBancarios = async () => {
+    if (!profesorId) return;
+    if (!cbu.trim() && !alias.trim()) {
+      Alert.alert('Faltan datos', 'Ingresá al menos el CBU o el Alias.');
+      return;
+    }
+    setGuardandoBancarios(true);
+    try {
+      await guardarDatosBancarios(profesorId, { cbu: cbu.trim(), alias: alias.trim(), banco: banco.trim(), titular: titular.trim() });
+      Alert.alert('Listo', 'Tus datos bancarios se guardaron correctamente.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'No se pudieron guardar los datos bancarios.');
+    } finally {
+      setGuardandoBancarios(false);
+    }
+  };
 
   const isLocked = (dia: string, turno: TurnoKey) =>
     turnosConfirmadosFuturos.some(o => o.dia === dia && o.turno === turno);
@@ -260,6 +292,50 @@ export default function AjustesCuenta() {
         {cambiandoPassword ? <ActivityIndicator color={Colors.background} /> : <Text style={styles.btnGuardarText}>Cambiar contraseña</Text>}
       </TouchableOpacity>
 
+      {/* Datos bancarios */}
+      <Text style={styles.sectionTitle}>Datos bancarios</Text>
+      <Text style={styles.sectionSubtitle}>
+        Tus alumnos los verán al agendar una clase por transferencia.
+      </Text>
+      <Text style={styles.label}>CBU</Text>
+      <TextInput
+        style={styles.input}
+        value={cbu}
+        onChangeText={setCbu}
+        placeholderTextColor="#aaa"
+        placeholder="22 dígitos"
+        keyboardType="number-pad"
+        maxLength={22}
+      />
+      <Text style={styles.label}>Alias</Text>
+      <TextInput
+        style={styles.input}
+        value={alias}
+        onChangeText={setAlias}
+        placeholderTextColor="#aaa"
+        placeholder="Ej: MARIA.GARCIA.MP"
+        autoCapitalize="characters"
+      />
+      <Text style={styles.label}>Banco</Text>
+      <TextInput
+        style={styles.input}
+        value={banco}
+        onChangeText={setBanco}
+        placeholderTextColor="#aaa"
+        placeholder="Ej: Mercado Pago"
+      />
+      <Text style={styles.label}>Titular de la cuenta</Text>
+      <TextInput
+        style={styles.input}
+        value={titular}
+        onChangeText={setTitular}
+        placeholderTextColor="#aaa"
+        placeholder="Tu nombre completo"
+      />
+      <TouchableOpacity style={styles.btnGuardar} onPress={handleGuardarBancarios} disabled={guardandoBancarios}>
+        {guardandoBancarios ? <ActivityIndicator color={Colors.background} /> : <Text style={styles.btnGuardarText}>Guardar datos bancarios</Text>}
+      </TouchableOpacity>
+
       {/* Horarios disponibles */}
       <Text style={styles.sectionTitle}>Horarios disponibles</Text>
       <DisponibilidadGrid value={disponibilidad} onToggle={toggleTurno} isLocked={isLocked} />
@@ -341,6 +417,13 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     marginTop: verticalScale(24),
     marginBottom: verticalScale(12),
+  },
+  sectionSubtitle: {
+    fontFamily: Fonts.rubikRegular,
+    color: '#8b93b8',
+    fontSize: moderateScale(11),
+    marginTop: verticalScale(-8),
+    marginBottom: verticalScale(10),
   },
   label: {
     fontFamily: Fonts.rubikMedium,

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator
+  StyleSheet, Alert, ActivityIndicator, Modal
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
-import { iniciarSesion } from '../services/authService';
+import { Ionicons } from '@expo/vector-icons';
+import { iniciarSesion, enviarResetPassword } from '../services/authService';
 import { obtenerUsuarioPorFirebase } from '../services/apiService';
 import { Colors } from '../constants/colors';
 import { Fonts } from '../constants/fonts';
@@ -16,6 +17,10 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [forgotVisible, setForgotVisible] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,10 +38,42 @@ export default function LoginScreen() {
         router.replace('/alumno/dashboard');
       }
     } catch (e: any) {
-        console.log('Error completo:', JSON.stringify(e));
-      setError(e.message);
+      const msg =
+        e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+          ? 'Email o contraseña incorrectos.'
+          : e.code === 'auth/invalid-email'
+          ? 'El email no es válido.'
+          : e.message || 'Error al iniciar sesión.';
+      setError(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEnviarReset = async () => {
+    if (!resetEmail.trim()) {
+      Alert.alert('Ingresá tu email', 'Escribí el email de tu cuenta para recibir el link.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await enviarResetPassword(resetEmail.trim());
+      setForgotVisible(false);
+      setResetEmail('');
+      Alert.alert(
+        'Email enviado ✓',
+        'Revisá tu bandeja de entrada y seguí el link para restablecer tu contraseña.'
+      );
+    } catch (e: any) {
+      const msg =
+        e.code === 'auth/user-not-found'
+          ? 'No existe ninguna cuenta con ese email.'
+          : e.code === 'auth/invalid-email'
+          ? 'El email no es válido.'
+          : 'No se pudo enviar el email. Intentá de nuevo.';
+      Alert.alert('Error', msg);
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -52,7 +89,7 @@ export default function LoginScreen() {
         placeholder="Email"
         placeholderTextColor="#aaa"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(t) => { setEmail(t); setError(''); }}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -62,28 +99,62 @@ export default function LoginScreen() {
         placeholder="Contraseña"
         placeholderTextColor="#aaa"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(t) => { setPassword(t); setError(''); }}
         secureTextEntry
       />
 
       <TouchableOpacity style={styles.botonPrimario} onPress={handleLogin} disabled={loading}>
         {loading
-          ? <ActivityIndicator color={Colors.blanco} />
-          : <Text style={styles.botonTexto}>INICIAR SESIÓN CON TU CORREO</Text>
+          ? <ActivityIndicator color={Colors.background} />
+          : <Text style={styles.botonTexto}>INICIAR SESIÓN</Text>
         }
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.botonSecundario}>
-        <Text style={styles.botonTexto}>INICIAR SESIÓN CON GOOGLE</Text>
+      <TouchableOpacity
+        style={styles.botonSecundario}
+        onPress={() => Alert.alert('Próximamente', 'El inicio de sesión con Google estará disponible en una próxima versión.')}
+      >
+        <Ionicons name="logo-google" size={16} color={Colors.blanco} style={{ marginRight: 8 }} />
+        <Text style={styles.botonTextoSecundario}>INICIAR SESIÓN CON GOOGLE</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => { setResetEmail(email); setForgotVisible(true); }}>
         <Text style={styles.link}>¿Olvidaste tu contraseña?</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={styles.link}>No tenés cuenta. ¡Registrate Ahora!</Text>
       </TouchableOpacity>
+
+      {/* Modal recuperar contraseña */}
+      <Modal visible={forgotVisible} animationType="fade" transparent onRequestClose={() => setForgotVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Recuperar contraseña</Text>
+            <Text style={styles.modalSubtitle}>
+              Ingresá tu email y te enviaremos un link para restablecer tu contraseña.
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="tu@email.com"
+              placeholderTextColor="#aaa"
+              value={resetEmail}
+              onChangeText={setResetEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TouchableOpacity style={styles.botonPrimario} onPress={handleEnviarReset} disabled={resetLoading}>
+              {resetLoading
+                ? <ActivityIndicator color={Colors.background} />
+                : <Text style={styles.botonTexto}>ENVIAR LINK</Text>
+              }
+            </TouchableOpacity>
+            <TouchableOpacity style={{ marginTop: 12 }} onPress={() => setForgotVisible(false)}>
+              <Text style={[styles.link, { textAlign: 'center' }]}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -112,7 +183,8 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.rubikRegular,
     color: Colors.error,
     marginBottom: verticalScale(12),
-    fontSize: moderateScale(14),
+    fontSize: moderateScale(13),
+    textAlign: 'center',
   },
   input: {
     width: '100%',
@@ -126,25 +198,31 @@ const styles = StyleSheet.create({
   },
   botonPrimario: {
     width: '100%',
-    backgroundColor: Colors.superficieA,
+    backgroundColor: Colors.cian,
     borderRadius: moderateScale(8),
     padding: moderateScale(16),
     alignItems: 'center',
     marginBottom: verticalScale(12),
-    borderWidth: 1,
-    borderColor: Colors.cian,
   },
   botonSecundario: {
     width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: Colors.superficieA,
     borderRadius: moderateScale(8),
     padding: moderateScale(16),
-    alignItems: 'center',
     marginBottom: verticalScale(24),
     borderWidth: 1,
-    borderColor: Colors.blanco,
+    borderColor: '#1e295d',
   },
   botonTexto: {
+    fontFamily: Fonts.spaceGroteskBold,
+    color: Colors.background,
+    fontSize: moderateScale(12),
+    letterSpacing: 1,
+  },
+  botonTextoSecundario: {
     fontFamily: Fonts.spaceGroteskBold,
     color: Colors.blanco,
     fontSize: moderateScale(12),
@@ -156,5 +234,33 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(13),
     marginTop: verticalScale(8),
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(24),
+  },
+  modalBox: {
+    backgroundColor: Colors.superficieA,
+    borderRadius: 12,
+    padding: scale(24),
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#1e295d',
+  },
+  modalTitle: {
+    fontFamily: Fonts.spaceGroteskBold,
+    color: Colors.blanco,
+    fontSize: moderateScale(18),
+    marginBottom: verticalScale(8),
+  },
+  modalSubtitle: {
+    fontFamily: Fonts.rubikRegular,
+    color: '#8b93b8',
+    fontSize: moderateScale(13),
+    marginBottom: verticalScale(20),
+    lineHeight: moderateScale(20),
   },
 });

@@ -74,8 +74,9 @@ export default function DisponibilidadGrid({ value, onToggle, isLocked }: Props)
       {/* Navegador de semana */}
       <View style={styles.weekNav}>
         <TouchableOpacity
-          style={styles.weekNavBtn}
-          onPress={() => setWeekOffset(prev => prev - 1)}
+          style={[styles.weekNavBtn, weekOffset <= 0 && { opacity: 0.3 }]}
+          onPress={() => setWeekOffset(prev => Math.max(0, prev - 1))}
+          disabled={weekOffset <= 0}
         >
           <Ionicons name="chevron-back" size={18} color={Colors.cian} />
         </TouchableOpacity>

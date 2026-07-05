@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.100.24:5000/api";
+import { BASE_URL } from '../config';
 
 export const registrarUsuarioEnBD = async (firebaseUid, email, nombre, apellido, rol) => {
   const response = await fetch(`${BASE_URL}/usuario/registro`, {
@@ -97,8 +97,11 @@ export const obtenerChats = async (profesorId) => {
   return response.json();
 };
 
-export const obtenerMensajes = async (conversacionId) => {
-  const response = await fetch(`${BASE_URL}/chat/${conversacionId}/mensajes`);
+export const obtenerMensajes = async (conversacionId, lectorId = null) => {
+  const url = lectorId
+    ? `${BASE_URL}/chat/${conversacionId}/mensajes?lectorId=${lectorId}`
+    : `${BASE_URL}/chat/${conversacionId}/mensajes`;
+  const response = await fetch(url);
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Error ${response.status}: ${errorText}`);
@@ -164,6 +167,16 @@ export const buscarProfesores = async (params = {}) => {
 export const obtenerDatosBancariosProfesor = async (profesorId) => {
   const response = await fetch(`${BASE_URL}/profesor/${profesorId}/datosbancarios`);
   if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
+  return response.json();
+};
+
+export const guardarDatosBancarios = async (profesorId, datos) => {
+  const response = await fetch(`${BASE_URL}/profesor/${profesorId}/datosbancarios`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos)
+  });
   if (!response.ok) throw new Error(`Error ${response.status}: ${await response.text()}`);
   return response.json();
 };

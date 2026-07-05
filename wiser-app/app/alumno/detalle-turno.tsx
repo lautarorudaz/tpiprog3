@@ -8,7 +8,8 @@ import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
-import { obtenerTurnosAlumno, crearValoracion } from '../../services/apiService';
+import { obtenerTurnosAlumno, crearValoracion, subirComprobante } from '../../services/apiService';
+import * as ImagePicker from 'expo-image-picker';
 import { useAlumno } from '../../hooks/use-alumno';
 import { TURNOS } from '../../components/disponibilidad-grid';
 
@@ -42,6 +43,8 @@ export default function DetalleTurno() {
   const [comentario, setComentario] = useState('');
   const [enviandoRating, setEnviandoRating] = useState(false);
   const [yaCalificado, setYaCalificado] = useState(false);
+  const [subiendoComp, setSubiendoComp] = useState(false);
+  const [yaCalificadoCargado, setYaCalificadoCargado] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -50,6 +53,10 @@ export default function DetalleTurno() {
         const turnos = await obtenerTurnosAlumno(alumnoId);
         const t = turnos.find((t: any) => String(t.id) === turnoId);
         setTurno(t || null);
+        if (t?.yaCalificado) {
+          setYaCalificado(true);
+        }
+        setYaCalificadoCargado(true);
       } catch {
         Alert.alert('Error', 'No se pudo cargar el detalle del turno.');
       } finally {
@@ -90,6 +97,27 @@ export default function DetalleTurno() {
       }
     } finally {
       setEnviandoRating(false);
+    }
+  };
+
+  const handleSubirComprobante = async () => {
+    if (!turno?.id) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos.'); return; }
+    setSubiendoComp(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], quality: 0.7, base64: true,
+      });
+      if (result.canceled || !result.assets[0]?.base64) { setSubiendoComp(false); return; }
+      const dataUri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      await subirComprobante(turno.id, dataUri);
+      setTurno((prev: any) => ({ ...prev, pago: { ...prev?.pago, comprobanteUrl: dataUri } }));
+      Alert.alert('Comprobante enviado ✓', 'El profesor va a revisar tu pago y confirmar la clase.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'No se pudo subir el comprobante.');
+    } finally {
+      setSubiendoComp(false);
     }
   };
 
@@ -179,14 +207,54 @@ export default function DetalleTurno() {
           </TouchableOpacity>
         </TouchableOpacity>
 
-        {esRealizada && !yaCalificado && (
+        {/* Sección de pago / comprobante */}
+        {turno.pago?.metodo === 'transferencia' && (
+          <View style={{ marginTop: verticalScale(18) }}>
+            <Text style={styles.sectionLabel}>PAGO POR TRANSFERENCIA</Text>
+            {turno.pago?.comprobanteUrl ? (
+              <View style={styles.comprobanteCard}>
+                <Image
+                  source={{ uri: turno.pago.comprobanteUrl }}
+                  style={styles.comprobanteImg}
+                  resizeMode="contain"
+                />
+                <Text style={styles.comprobanteLegend}>Comprobante adjunto</Text>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.comprobantePendCard}>
+                  <Ionicons name="alert-circle-outline" size={scale(20)} color="#ffb020" />
+                  <Text style={styles.comprobantePendText}>
+                    Aún no subiste el comprobante de pago.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.btnSubirComp}
+                  onPress={handleSubirComprobante}
+                  disabled={subiendoComp}
+                >
+                  {subiendoComp ? (
+                    <ActivityIndicator color={Colors.background} />
+                  ) : (
+                    <>
+                      <Ionicons name="cloud-upload-outline" size={16} color={Colors.background} />
+                      <Text style={styles.btnSubirCompText}>Cargar comprobante</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {esRealizada && yaCalificadoCargado && !yaCalificado && (
           <TouchableOpacity style={styles.btnCalificar} onPress={() => setRatingVisible(true)}>
             <Ionicons name="star-outline" size={18} color={Colors.background} />
             <Text style={styles.btnCalificarText}>Dejar calificación</Text>
           </TouchableOpacity>
         )}
 
-        {esRealizada && yaCalificado && (
+        {esRealizada && yaCalificadoCargado && yaCalificado && (
           <View style={styles.calificadoBadge}>
             <Ionicons name="checkmark-circle" size={16} color="#4cd964" />
             <Text style={styles.calificadoText}>Ya calificaste esta clase</Text>
@@ -274,6 +342,39 @@ const styles = StyleSheet.create({
     paddingVertical: 6, paddingHorizontal: 12,
   },
   btnMensajeText: { fontFamily: Fonts.spaceGroteskBold, color: Colors.cian, fontSize: moderateScale(10) },
+  sectionLabel: {
+    fontFamily: Fonts.spaceGroteskBold, color: '#aaa',
+    fontSize: moderateScale(10), letterSpacing: 1.5,
+    marginBottom: verticalScale(8),
+  },
+  comprobanteCard: {
+    backgroundColor: Colors.superficieA, borderRadius: 10,
+    borderWidth: 1, borderColor: Colors.cian, overflow: 'hidden',
+  },
+  comprobanteImg: {
+    width: '100%', height: verticalScale(200),
+  },
+  comprobanteLegend: {
+    fontFamily: Fonts.rubikRegular, color: '#8b93b8',
+    fontSize: moderateScale(11), textAlign: 'center', paddingVertical: scale(8),
+  },
+  comprobantePendCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: Colors.superficieA, borderRadius: 8,
+    borderWidth: 1, borderColor: '#ffb020', padding: scale(14),
+    marginBottom: verticalScale(10),
+  },
+  comprobantePendText: {
+    flex: 1, fontFamily: Fonts.rubikRegular, color: '#ffb020',
+    fontSize: moderateScale(12),
+  },
+  btnSubirComp: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: Colors.cian, borderRadius: 8, paddingVertical: scale(12),
+  },
+  btnSubirCompText: {
+    fontFamily: Fonts.spaceGroteskBold, color: Colors.background, fontSize: moderateScale(13),
+  },
   btnCalificar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#FFD700', borderRadius: 8, paddingVertical: scale(14),

@@ -70,6 +70,7 @@ export default function MonthCalendar({ mes, onCambiarMes, fechaSeleccionada, on
           const marca = marcas[fechaISO];
           const esHoy = fechaISO === hoyISO;
           const esSeleccionado = fechaISO === fechaSeleccionada;
+          const esPasado = fechaISO < hoyISO;
 
           return (
             <TouchableOpacity
@@ -77,12 +78,14 @@ export default function MonthCalendar({ mes, onCambiarMes, fechaSeleccionada, on
               style={[
                 styles.cell,
                 styles.diaCell,
+                esPasado && styles.diaPasado,
                 esHoy && styles.diaHoy,
                 esSeleccionado && styles.diaSeleccionado,
               ]}
-              onPress={() => onSeleccionarDia(fechaISO)}
+              onPress={() => !esPasado && onSeleccionarDia(fechaISO)}
+              disabled={esPasado}
             >
-              <Text style={[styles.diaTexto, esSeleccionado && styles.diaTextoSeleccionado]}>{dia}</Text>
+              <Text style={[styles.diaTexto, esPasado && styles.diaTextoPasado, esSeleccionado && styles.diaTextoSeleccionado]}>{dia}</Text>
               {marca && (
                 <View
                   style={[
@@ -161,6 +164,12 @@ const styles = StyleSheet.create({
   diaTextoSeleccionado: {
     color: Colors.background,
     fontFamily: Fonts.rubikMedium,
+  },
+  diaPasado: {
+    opacity: 0.3,
+  },
+  diaTextoPasado: {
+    color: '#666',
   },
   puntoMarca: {
     position: 'absolute',

@@ -22,19 +22,26 @@ export default function AlumnoChatDetail() {
   const [enviando, setEnviando] = useState(false);
   const listRef = useRef<FlatList>(null);
 
+  const loadMensajes = async (silent = false) => {
+    try {
+      const data = await obtenerMensajes(Number(conversacionId), usuarioId ?? null);
+      setMensajes(data);
+    } catch {
+      if (!silent) Alert.alert('Error', 'No se pudieron cargar los mensajes.');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await obtenerMensajes(Number(conversacionId));
-        setMensajes(data);
-      } catch {
-        Alert.alert('Error', 'No se pudieron cargar los mensajes.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (conversacionId) load();
+    if (conversacionId) loadMensajes();
   }, [conversacionId]);
+
+  useEffect(() => {
+    if (!conversacionId) return;
+    const interval = setInterval(() => loadMensajes(true), 5000);
+    return () => clearInterval(interval);
+  }, [conversacionId, usuarioId]);
 
   const handleEnviar = async () => {
     const contenido = texto.trim();

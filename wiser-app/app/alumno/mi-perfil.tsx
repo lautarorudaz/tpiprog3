@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { editarPerfilAlumno } from '../../services/apiService';
@@ -50,7 +51,22 @@ export default function AlumnoMiPerfil() {
     }
     setGuardando(true);
     try {
-      await editarPerfilAlumno(alumnoId, { nombre, apellido, fotoPerfil, zonaDeseada: zona.trim() || null, latitud: null, longitud: null });
+      let latitud: number | null = usuario?.alumno?.latitud ?? null;
+      let longitud: number | null = usuario?.alumno?.longitud ?? null;
+
+      // Si cambió la zona, geocodificar la nueva dirección
+      const zonaAnterior = usuario?.alumno?.zonaDeseada ?? '';
+      if (zona.trim() && zona.trim() !== zonaAnterior) {
+        try {
+          const results = await Location.geocodeAsync(zona.trim());
+          if (results.length > 0) {
+            latitud = results[0].latitude;
+            longitud = results[0].longitude;
+          }
+        } catch {}
+      }
+
+      await editarPerfilAlumno(alumnoId, { nombre, apellido, fotoPerfil, zonaDeseada: zona.trim() || null, latitud, longitud });
       await reload();
       Alert.alert('Listo', 'Tu perfil se actualizó correctamente.', [{ text: 'OK', onPress: () => router.back() }]);
     } catch (err: any) {

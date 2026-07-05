@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/colors';
@@ -20,10 +20,12 @@ export default function ProfesorChats() {
   const { profesorId, loading: loadingUsuario } = useProfesor();
 
   const [loadingChats, setLoadingChats] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [chats, setChats] = useState<any[]>([]);
   const [filtro, setFiltro] = useState<FiltroChat>('todos');
 
-  const loadChats = async (id: number) => {
+  const loadChats = useCallback(async (id: number, isRefresh = false) => {
+    if (!isRefresh) setLoadingChats(true);
     try {
       const data = await obtenerChats(id);
       setChats(data);
@@ -32,12 +34,22 @@ export default function ProfesorChats() {
       Alert.alert('Error', 'No se pudieron cargar los chats.');
     } finally {
       setLoadingChats(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    if (profesorId) loadChats(profesorId);
-  }, [profesorId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (profesorId) loadChats(profesorId);
+    }, [profesorId, loadChats])
+  );
+
+  const handleRefresh = useCallback(() => {
+    if (profesorId) {
+      setRefreshing(true);
+      loadChats(profesorId, true);
+    }
+  }, [profesorId, loadChats]);
 
   const chatsFiltrados = useMemo(() => {
     const ordenados = [...chats].sort((a, b) =>
@@ -84,9 +96,13 @@ export default function ProfesorChats() {
         keyExtractor={item => String(item.conversacionId)}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={<Text style={styles.vacioText}>No hay conversaciones para mostrar.</Text>}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.cian} colors={[Colors.cian]} />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.chatCard}
+            activeOpacity={0.75}
             onPress={() => router.push({
               pathname: '/profesor/chat-detail',
               params: { conversacionId: item.conversacionId, alumnoNombre: item.alumnoNombre }

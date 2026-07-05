@@ -32,6 +32,7 @@ export default function PerfilProfesor() {
   const [perfil, setPerfil] = useState<any>(null);
   const [valoraciones, setValoraciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mostrarTodas, setMostrarTodas] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -135,7 +136,7 @@ export default function PerfilProfesor() {
         {valoraciones.length > 0 && (
           <>
             <Text style={styles.seccionTitle}>Reseñas</Text>
-            {valoraciones.slice(0, 3).map(v => (
+            {(mostrarTodas ? valoraciones : valoraciones.slice(0, 3)).map(v => (
               <View key={v.id} style={styles.resenaCard}>
                 <View style={styles.resenaHeader}>
                   <Text style={styles.resenaAlumno}>{v.alumno}</Text>
@@ -144,6 +145,13 @@ export default function PerfilProfesor() {
                 {v.comentario && <Text style={styles.resenaComentario}>{v.comentario}</Text>}
               </View>
             ))}
+            {valoraciones.length > 3 && (
+              <TouchableOpacity onPress={() => setMostrarTodas(p => !p)} style={styles.btnVerTodas}>
+                <Text style={styles.btnVerTodasText}>
+                  {mostrarTodas ? 'Ver menos' : `Ver todas las reseñas (${valoraciones.length})`}
+                </Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </ScrollView>
@@ -218,7 +226,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: '#1e295d',
   },
   btnAgendar: {
-    backgroundColor: '#4cd964', borderRadius: 10, paddingVertical: scale(16), alignItems: 'center',
+    backgroundColor: Colors.cian, borderRadius: 10, paddingVertical: scale(16), alignItems: 'center',
   },
   btnAgendarText: { fontFamily: Fonts.spaceGroteskBold, color: Colors.background, fontSize: moderateScale(15) },
+  btnVerTodas: {
+    alignSelf: 'center',
+    marginTop: verticalScale(4),
+    paddingVertical: scale(8),
+  },
+  btnVerTodasText: {
+    fontFamily: Fonts.rubikMedium,
+    color: Colors.cian,
+    fontSize: moderateScale(12),
+    textDecorationLine: 'underline',
+  },
 });

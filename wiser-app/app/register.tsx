@@ -107,7 +107,7 @@ export default function RegisterScreen() {
 
       <TouchableOpacity style={styles.boton} onPress={handleRegistro} disabled={loading}>
         {loading
-          ? <ActivityIndicator color={Colors.blanco} />
+          ? <ActivityIndicator color={Colors.background} />
           : <Text style={styles.botonTexto}>Continuar</Text>
         }
       </TouchableOpacity>
@@ -158,17 +158,15 @@ const styles = StyleSheet.create({
   },
   boton: {
     width: '100%',
-    backgroundColor: Colors.superficieA,
+    backgroundColor: Colors.cian,
     borderRadius: moderateScale(8),
     padding: moderateScale(16),
     alignItems: 'center',
     marginBottom: verticalScale(16),
-    borderWidth: 1,
-    borderColor: Colors.blanco,
   },
   botonTexto: {
     fontFamily: Fonts.spaceGroteskBold,
-    color: Colors.blanco,
+    color: Colors.background,
     fontSize: moderateScale(14),
     letterSpacing: 1,
   },

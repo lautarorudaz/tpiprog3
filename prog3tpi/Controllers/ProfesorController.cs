@@ -106,7 +106,25 @@ namespace TP02.Controllers
         {
             var datos = await _db.DatosBancarios.FirstOrDefaultAsync(d => d.ProfesorId == id);
             if (datos == null) return NotFound("El profesor aún no cargó sus datos bancarios.");
-            return Ok(new { datos.CBU, datos.Alias, datos.Banco, datos.Titular });
+            return Ok(new { cbu = datos.CBU, alias = datos.Alias, banco = datos.Banco, titular = datos.Titular });
+        }
+
+        // PUT api/profesor/{id}/datosbancarios
+        [HttpPut("{id}/datosbancarios")]
+        public async Task<IActionResult> GuardarDatosBancarios(int id, [FromBody] DatosBancariosDto dto)
+        {
+            var datos = await _db.DatosBancarios.FirstOrDefaultAsync(d => d.ProfesorId == id);
+            if (datos == null)
+            {
+                datos = new DatosBancarios { ProfesorId = id };
+                _db.DatosBancarios.Add(datos);
+            }
+            datos.CBU     = dto.Cbu?.Trim();
+            datos.Alias   = dto.Alias?.Trim();
+            datos.Banco   = dto.Banco?.Trim();
+            datos.Titular = dto.Titular?.Trim() ?? string.Empty;
+            await _db.SaveChangesAsync();
+            return Ok(new { mensaje = "Datos bancarios guardados." });
         }
 
         // PUT api/profesor/{id}
@@ -175,4 +193,6 @@ namespace TP02.Controllers
         List<int> MateriaIds,
         List<DisponibilidadDto> Disponibilidades
     );
+
+    public record DatosBancariosDto(string? Cbu, string? Alias, string? Banco, string? Titular);
 }

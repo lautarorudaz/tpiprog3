@@ -190,7 +190,8 @@ export default function ProfesorAgenda() {
                   modalidad: c.modalidad,
                   alumnoNombre: c.alumno,
                   alumnoId: String(c.alumnoId ?? ''),
-                  alumnoFoto: c.alumnoFoto ?? '',
+                  pagoMetodo: c.pago?.metodo ?? '',
+                  pagoComprobanteUrl: c.pago?.comprobanteUrl ?? '',
                 },
               })}
             >
@@ -268,7 +269,8 @@ export default function ProfesorAgenda() {
                           modalidad: t.modalidad,
                           alumnoNombre: t.alumno,
                           alumnoId: String(t.alumnoId ?? ''),
-                          alumnoFoto: t.alumnoFoto ?? '',
+                          pagoMetodo: t.pago?.metodo ?? '',
+                          pagoComprobanteUrl: t.pago?.comprobanteUrl ?? '',
                         },
                       });
                     }}

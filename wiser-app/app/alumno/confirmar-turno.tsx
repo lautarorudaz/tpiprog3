@@ -27,9 +27,14 @@ export default function ConfirmarTurno() {
     turnoHorario: string; precioHora: string; modalidad: string;
   }>();
 
-  const [modalidad, setModalidad] = useState<'Virtual' | 'presencial'>(
-    params.modalidad === 'Virtual' ? 'Virtual' : 'presencial'
-  );
+  // Opciones de modalidad válidas según lo que ofrece el profesor
+  const opcionesModalidad: ('Virtual' | 'presencial')[] = (() => {
+    if (params.modalidad === 'Virtual') return ['Virtual'];
+    if (params.modalidad === 'presencial') return ['presencial'];
+    return ['Virtual', 'presencial']; // hibrida → ambas
+  })();
+
+  const [modalidad, setModalidad] = useState<'Virtual' | 'presencial'>(opcionesModalidad[0]);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('transferencia');
   const [datosBancarios, setDatosBancarios] = useState<any>(null);
   const [loadingDatos, setLoadingDatos] = useState(false);
@@ -141,7 +146,7 @@ export default function ConfirmarTurno() {
         {/* Modalidad */}
         <Text style={styles.sectionLabel}>Elige una modalidad</Text>
         <View style={styles.modalidadRow}>
-          {(['Virtual', 'presencial'] as const).map(mod => (
+          {opcionesModalidad.map(mod => (
             <TouchableOpacity
               key={mod}
               style={styles.radioOption}

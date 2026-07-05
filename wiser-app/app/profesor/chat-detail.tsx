@@ -22,21 +22,29 @@ export default function ChatDetail() {
   const [enviando, setEnviando] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  const loadMensajes = async () => {
+  const loadMensajes = async (silent = false) => {
     try {
-      const data = await obtenerMensajes(Number(conversacionId));
+      const data = await obtenerMensajes(Number(conversacionId), usuario?.id ?? null);
       setMensajes(data);
     } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'No se pudieron cargar los mensajes.');
+      if (!silent) {
+        console.error(err);
+        Alert.alert('Error', 'No se pudieron cargar los mensajes.');
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     if (conversacionId) loadMensajes();
   }, [conversacionId]);
+
+  useEffect(() => {
+    if (!conversacionId) return;
+    const interval = setInterval(() => loadMensajes(true), 5000);
+    return () => clearInterval(interval);
+  }, [conversacionId, usuario?.id]);
 
   const handleEnviar = async () => {
     const contenido = texto.trim();

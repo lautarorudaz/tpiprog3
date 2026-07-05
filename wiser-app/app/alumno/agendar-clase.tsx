@@ -73,7 +73,8 @@ export default function AgendarClase() {
   // Available turnos for the selected date
   const turnosDisponiblesParaDia = useMemo(() => {
     if (!fechaSeleccionada) return [];
-    const diaSemana = DIA_POR_JS[new Date(fechaSeleccionada).getDay()];
+    // Fix timezone: parse at noon local time to avoid UTC midnight shifting day-of-week
+    const diaSemana = DIA_POR_JS[new Date(fechaSeleccionada + 'T12:00:00').getDay()];
     const dispParaDia = disponibles.disponibilidades
       .filter(d => d.diaSemana === diaSemana)
       .map(d => d.turno as string);

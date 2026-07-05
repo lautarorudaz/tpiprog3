@@ -11,6 +11,7 @@ import { Fonts } from '../../constants/fonts';
 import { obtenerMaterias, actualizarPerfilProfesor, obtenerUsuarioPorFirebase } from '../../services/apiService';
 import { auth } from '../../services/firebase';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import DisponibilidadGrid, { DIAS, TurnoKey, crearDisponibilidadVacia, DisponibilidadValue } from '../../components/disponibilidad-grid';
 
 export default function ProfesorSetupProfile() {
@@ -28,6 +29,7 @@ export default function ProfesorSetupProfile() {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [lugarDictado, setLugarDictado] = useState('');
   const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
+  const [descripcion, setDescripcion] = useState('');
 
   // Step 2 State
   const [modalMateriasOpen, setModalMateriasOpen] = useState(false);
@@ -94,6 +96,11 @@ export default function ProfesorSetupProfile() {
       Alert.alert('Preferencias', 'Por favor seleccioná al menos una materia.');
       return;
     }
+    const tieneNivel = selectedNiveles.primario || selectedNiveles.secundario || selectedNiveles.universitario;
+    if (!tieneNivel) {
+      Alert.alert('Preferencias', 'Por favor seleccioná al menos un nivel.');
+      return;
+    }
     if (!precioHora.trim()) {
       Alert.alert('Preferencias', 'Por favor ingresá tu precio por hora.');
       return;
@@ -106,6 +113,25 @@ export default function ProfesorSetupProfile() {
       setSelectedMateriaNames(selectedMateriaNames.filter(n => n !== name));
     } else {
       setSelectedMateriaNames([...selectedMateriaNames, name]);
+    }
+  };
+
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso denegado', 'Necesitás permitir el acceso a la galería.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setFotoPerfil(asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri);
     }
   };
 
@@ -150,6 +176,12 @@ export default function ProfesorSetupProfile() {
         });
       });
 
+      if (disponibilidadesPayload.length === 0) {
+        Alert.alert('Disponibilidad', 'Por favor seleccioná al menos un horario disponible.');
+        setLoading(false);
+        return;
+      }
+
       // Split name
       const nameParts = nombreCompleto.trim().split(' ');
       const nombre = nameParts[0] || '';
@@ -174,7 +206,7 @@ export default function ProfesorSetupProfile() {
         nombre,
         apellido,
         fotoPerfil: fotoPerfil,
-        descripcion: "Profesor de Wiser",
+        descripcion: descripcion.trim() || "Profesor de Wiser",
         modalidad: selectedModalidad,
         precioHora: parseFloat(cleanPrice) || 0,
         zona: lugarDictado,
@@ -231,8 +263,10 @@ export default function ProfesorSetupProfile() {
                 <Ionicons name="person-outline" size={scale(64)} color="#aaa" />
               )}
             </View>
-            <TouchableOpacity onPress={() => Alert.alert('Foto', 'Funcionalidad de carga próximamente.')} style={styles.photoButton}>
-              <Text style={styles.photoButtonText}>Carga tu foto de perfil</Text>
+            <TouchableOpacity onPress={handlePickPhoto} style={styles.photoButton}>
+              <Text style={styles.photoButtonText}>
+                {fotoPerfil ? 'Cambiar foto de perfil' : 'Carga tu foto de perfil'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -258,6 +292,17 @@ export default function ProfesorSetupProfile() {
                 onChangeText={setLugarDictado}
               />
             </View>
+
+            <Text style={styles.label}>Descripción (opcional)</Text>
+            <TextInput
+              style={[styles.input, { height: verticalScale(80), textAlignVertical: 'top', marginBottom: verticalScale(24) }]}
+              placeholder="Contá un poco sobre vos y tu experiencia..."
+              placeholderTextColor="#aaa"
+              value={descripcion}
+              onChangeText={setDescripcion}
+              multiline
+              numberOfLines={3}
+            />
 
             <TouchableOpacity style={styles.btnContinuar} onPress={handleNextStep1}>
               <Text style={styles.btnContinuarText}>Continuar</Text>
@@ -453,8 +498,7 @@ const styles = StyleSheet.create({
   wiser: {
     fontFamily: Fonts.spaceGroteskBold,
     fontSize: moderateScale(36),
-    color: '#3455ff', // Deep bluish purple text as seen in screenshot
-    fontWeight: 'bold',
+    color: '#3455ff',
   },
   wiserCenter: {
     fontFamily: Fonts.spaceGroteskBold,
@@ -462,18 +506,19 @@ const styles = StyleSheet.create({
     color: '#3455ff',
     textAlign: 'center',
     marginBottom: verticalScale(8),
-    fontWeight: 'bold',
   },
   badge: {
-    backgroundColor: '#b8c6e2',
+    backgroundColor: 'transparent',
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.cian,
   },
   badgeText: {
     fontFamily: Fonts.spaceGroteskBold,
     fontSize: moderateScale(10),
-    color: Colors.background,
+    color: Colors.cian,
     letterSpacing: 1,
   },
   subtitle: {
@@ -490,12 +535,12 @@ const styles = StyleSheet.create({
     width: scale(110),
     height: scale(110),
     borderRadius: scale(55),
-    backgroundColor: Colors.blanco,
+    backgroundColor: Colors.superficieB,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#aaa',
+    borderColor: Colors.cian,
   },
   avatarImage: {
     width: '100%',
@@ -536,6 +581,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: scale(12),
     marginBottom: verticalScale(30),
+    borderWidth: 1,
+    borderColor: '#1e295d',
   },
   inputIcon: {
     marginRight: scale(8),
@@ -548,7 +595,7 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
   },
   btnContinuar: {
-    backgroundColor: '#c5cbd3', // Light gray button in mockup 1
+    backgroundColor: Colors.cian,
     borderRadius: 4,
     paddingVertical: scale(14),
     alignItems: 'center',
@@ -559,7 +606,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     color: Colors.background,
     fontSize: moderateScale(14),
-    fontWeight: 'bold',
   },
   stepTitle: {
     fontFamily: Fonts.spaceGroteskBold,
@@ -665,7 +711,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(40),
   },
   btnContinuarPill: {
-    backgroundColor: '#b8c6e2', // Light grayish purple pill button in mockup 2
+    backgroundColor: Colors.cian,
     borderRadius: 25,
     paddingVertical: scale(14),
     paddingHorizontal: scale(48),
@@ -676,7 +722,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.spaceGroteskBold,
     color: Colors.background,
     fontSize: moderateScale(14),
-    fontWeight: 'bold',
     letterSpacing: 1,
   },
   modalOverlay: {

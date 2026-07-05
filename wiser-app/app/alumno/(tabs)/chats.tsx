@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/colors';
@@ -15,22 +15,34 @@ export default function AlumnoChats() {
   const { alumnoId, loading: loadingAlumno } = useAlumno();
   const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filtro, setFiltro] = useState<Filtro>('todos');
 
-  useEffect(() => {
-    const load = async () => {
-      if (!alumnoId) return;
-      try {
-        const data = await obtenerChatsAlumno(alumnoId);
-        setChats(data);
-      } catch {
-        Alert.alert('Error', 'No se pudieron cargar los chats.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [alumnoId]);
+  const loadChats = useCallback(async (id: number, isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
+    try {
+      const data = await obtenerChatsAlumno(id);
+      setChats(data);
+    } catch {
+      Alert.alert('Error', 'No se pudieron cargar los chats.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (alumnoId) loadChats(alumnoId);
+    }, [alumnoId, loadChats])
+  );
+
+  const handleRefresh = useCallback(() => {
+    if (alumnoId) {
+      setRefreshing(true);
+      loadChats(alumnoId, true);
+    }
+  }, [alumnoId, loadChats]);
 
   const chatsFiltrados = useMemo(() => {
     const ord = [...chats].sort((a, b) =>
@@ -71,9 +83,13 @@ export default function AlumnoChats() {
         keyExtractor={item => String(item.conversacionId)}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={<Text style={styles.vacio}>No hay conversaciones para mostrar.</Text>}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.cian} colors={[Colors.cian]} />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.chatCard}
+            activeOpacity={0.75}
             onPress={() => router.push({
               pathname: '/alumno/chat-detail',
               params: { conversacionId: item.conversacionId, interlocutorNombre: item.profesorNombre }

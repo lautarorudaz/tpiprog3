@@ -112,7 +112,8 @@ namespace TP02.Controllers
                         .Where(c => c.AlumnoId == alumnoId && c.ProfesorId == t.ProfesorId)
                         .Select(c => (int?)c.Id)
                         .FirstOrDefault(),
-                    Pago           = t.Pago == null ? null : new { t.Pago.Metodo, t.Pago.Estado, t.Pago.ComprobanteUrl }
+                    Pago           = t.Pago == null ? null : new { t.Pago.Metodo, t.Pago.Estado, t.Pago.ComprobanteUrl },
+                    YaCalificado   = _db.Valoraciones.Any(v => v.TurnoId == t.Id)
                 })
                 .ToListAsync();
 

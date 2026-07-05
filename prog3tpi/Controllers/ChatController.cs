@@ -16,16 +16,8 @@ namespace TP02.Controllers
         [HttpGet("profesor/{profesorId}")]
         public async Task<IActionResult> ObtenerChatsProfesor(int profesorId)
         {
-            // Verify profesor exists
             var profesor = await _db.Profesores.FindAsync(profesorId);
             if (profesor == null) return NotFound("Profesor no encontrado");
-
-            // Seed mock alumnos and conversations if none exist
-            var tieneChats = await _db.Conversaciones.AnyAsync(c => c.ProfesorId == profesorId);
-            if (!tieneChats)
-            {
-                await SembrarMockChats(profesorId);
-            }
 
             var conversacionList = await _db.Conversaciones
                 .Include(c => c.Alumno).ThenInclude(a => a.Usuario)
@@ -89,7 +81,7 @@ namespace TP02.Controllers
 
         // GET api/chat/{conversacionId}/mensajes
         [HttpGet("{conversacionId}/mensajes")]
-        public async Task<IActionResult> ObtenerMensajes(int conversacionId)
+        public async Task<IActionResult> ObtenerMensajes(int conversacionId, [FromQuery] int? lectorId = null)
         {
             var mensajes = await _db.Mensajes
                 .Include(m => m.Remitente)
@@ -107,17 +99,16 @@ namespace TP02.Controllers
                 })
                 .ToListAsync();
 
-            // Mark all messages as read
+            // Mark only messages sent by the OTHER person as read
             var noLeidos = await _db.Mensajes
-                .Where(m => m.ConversacionId == conversacionId && !m.Leido)
+                .Where(m => m.ConversacionId == conversacionId && !m.Leido
+                       && (lectorId == null || m.RemitenteId != lectorId))
                 .ToListAsync();
-            
+
             if (noLeidos.Any())
             {
                 foreach (var msg in noLeidos)
-                {
                     msg.Leido = true;
-                }
                 await _db.SaveChangesAsync();
             }
 
@@ -154,67 +145,6 @@ namespace TP02.Controllers
             });
         }
 
-        private async Task SembrarMockChats(int profesorId)
-        {
-            // Seed mock student users
-            var mockAlumnosInfo = new[]
-            {
-                new { Nombre = "Federico", Apellido = "Zeniquel", Email = "federico@wiser.com", Uid = "mock_fed", Msg = "Hola profe", Unread = false },
-                new { Nombre = "Luciano", Apellido = "Gomez", Email = "luciano@wiser.com", Uid = "mock_lu", Msg = "No hice la tarea", Unread = true },
-                new { Nombre = "Mateo", Apellido = "Bosch", Email = "mateo@wiser.com", Uid = "mock_mat", Msg = "Hay clases hoy ?", Unread = false }
-            };
-
-            foreach (var info in mockAlumnosInfo)
-            {
-                var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == info.Email);
-                if (usuario == null)
-                {
-                    usuario = new Usuario
-                    {
-                        Nombre = info.Nombre,
-                        Apellido = info.Apellido,
-                        Email = info.Email,
-                        Rol = RolUsuario.alumno,
-                        FirebaseUid = info.Uid
-                    };
-                    _db.Usuarios.Add(usuario);
-                    await _db.SaveChangesAsync();
-                }
-
-                var alumno = await _db.Alumnos.FirstOrDefaultAsync(a => a.UsuarioId == usuario.Id);
-                if (alumno == null)
-                {
-                    alumno = new Alumno
-                    {
-                        UsuarioId = usuario.Id
-                    };
-                    _db.Alumnos.Add(alumno);
-                    await _db.SaveChangesAsync();
-                }
-
-                // Create conversation
-                var conv = new Conversacion
-                {
-                    ProfesorId = profesorId,
-                    AlumnoId = alumno.Id,
-                    CreadaEn = DateTime.UtcNow.AddHours(-2)
-                };
-                _db.Conversaciones.Add(conv);
-                await _db.SaveChangesAsync();
-
-                // Add mock message
-                var msg = new Mensaje
-                {
-                    ConversacionId = conv.Id,
-                    RemitenteId = usuario.Id,
-                    Contenido = info.Msg,
-                    EnviadoEn = DateTime.UtcNow.AddMinutes(info.Unread ? -10 : -30),
-                    Leido = !info.Unread
-                };
-                _db.Mensajes.Add(msg);
-                await _db.SaveChangesAsync();
-            }
-        }
     }
 
     public record EnviarMensajeDto(int ConversacionId, int RemitenteId, string Contenido);
